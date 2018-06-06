@@ -1,6 +1,10 @@
 # ContentTransfer
 Share file by QR Code
 
-version:1.0/180606
+versionName:1.0
+versionCode:180606
 app will crash when recv machine is group client
 
+versionName:1.0.01
+versionCode:18060602
+bug fix
