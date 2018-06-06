@@ -118,6 +118,8 @@ public class WifiP2pController {
                 @Override
                 public void onConnectionInfoAvailable(WifiP2pInfo info) {
                     Log.e(DefaultValue.TAG, "onConnectionInfoAvailable");
+
+                    String ip = null;
                     if (info.groupFormed && info.isGroupOwner) {
                         //确定为组拥有者，创建线程用于接收连接请求
                         //提交图片下载、读取的异步任务
@@ -129,20 +131,21 @@ public class WifiP2pController {
 
                     } else if (info.groupFormed) {
                         //作为客户端，创建一个线程用于连接组拥有者
-                        if(mCustomDevice == null)
-                            mCustomDevice = new WifiP2pDeviceInfo(null, null);
-                        mCustomDevice.setIp(info.groupOwnerAddress.getHostAddress());
+                        //if(mCustomDevice == null)
+                        //    mCustomDevice = new WifiP2pDeviceInfo(null, null);
+                        //mCustomDevice.setIp(info.groupOwnerAddress.getHostAddress());
                         //HeartBeatTask task = new HeartBeatTask(false, mServerIp, DefaultValue.PORT_HEART_BEAT);
                         //task.start();
                         //String path = mPath == null ? null : mPath.toString();
                         //FileTransferThread task = new FileTransferThread(isServer(), mCustomDevice.getIp(), DefaultValue.PORT_TRANSFER, mContext, path);
                         //task.start();
 
+                        ip = info.groupOwnerAddress.getHostAddress();
                         sendMessage("Group Client");
                     }
 
                     String path = mPath == null ? null : mPath.toString();
-                    String ip = (mCustomDevice != null && mCustomDevice.getIp() != null) ? mCustomDevice.getIp() : null;
+                    //String ip = (mCustomDevice != null && mCustomDevice.getIp() != null) ? mCustomDevice.getIp() : null;
                     FileTransferThread task = new FileTransferThread(isServer(), ip, DefaultValue.PORT_TRANSFER, mContext, path);
                     task.setTransferStatue(new FileTransferThread.TransferStatue() {
                         @Override
