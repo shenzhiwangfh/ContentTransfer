@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest package="com.tct.libzxing" xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.CAMERA"/>
+    <uses-permission android:name="android.permission.VIBRATE"/>
+    <application
+        android:theme="@style/AppTheme">
+        <activity
+            android:theme="@style/Theme.AppCompat.NoActionBar"
+            android:label="@string/zxing_bar_name"
+            android:name=".zxing.activity.CaptureActivity"/>
+    </application>
+</manifest>
