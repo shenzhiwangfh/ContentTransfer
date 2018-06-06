@@ -99,7 +99,7 @@ public class TransferActivity extends AppCompatActivity implements View.OnClickL
         int id = v.getId();
         switch (id) {
             case R.id.share_file: {
-                setServer(true);
+                //setServer(true);
                 clearMessage();
 
                 Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
@@ -148,6 +148,7 @@ public class TransferActivity extends AppCompatActivity implements View.OnClickL
                 if (bundle != null) {
                     String scanResult = bundle.getString("result");
                     setCustomDevice(WifiP2pDeviceInfo.analysis(scanResult));
+                    setServer(true);
                     setLooper(true);
                     mHandler.sendEmptyMessage(DefaultValue.MESSAGE_WIFI_DISCOVER);
                 }
@@ -250,7 +251,6 @@ public class TransferActivity extends AppCompatActivity implements View.OnClickL
                             message += getResources().getString(R.string.transfer_client_end, path);
                     } else if(status == DefaultValue.TRANSFER_ERROR) {
                         String error = (String) msg.obj;
-                        message += getResources().getString(R.string.transfer_error, error);
                     }
                     sendMessage(message);
                     break;

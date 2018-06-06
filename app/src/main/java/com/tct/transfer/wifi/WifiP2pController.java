@@ -101,14 +101,13 @@ public class WifiP2pController {
             WifiP2pConfig config = new WifiP2pConfig();
             config.deviceAddress = device.deviceAddress;
             config.wps.setup = WpsInfo.PBC;
-            //if (!isServer()) {
-            //    mManager.createGroup(mChannel, new IgnoreActionListener("createGroup"));
-            //}
-            //mManager.connect(mChannel, config, new IgnoreActionListener("connect"));
 
             WifiP2pQueueManager queueManager = new WifiP2pQueueManager(mManager, mChannel, null);
             queueManager.setConfig(config);
-            queueManager.sendMessage(new WifiP2pMessage(WifiP2pMessage.MESSAGE_CONNECT, null)).start();
+            queueManager
+                    //.sendMessage(new WifiP2pMessage(WifiP2pMessage.MESSAGE_CREATE_GROUP, null))
+                    .sendMessage(new WifiP2pMessage(WifiP2pMessage.MESSAGE_CONNECT, null))
+                    .start();
         }
     }
 
@@ -119,7 +118,6 @@ public class WifiP2pController {
                 @Override
                 public void onConnectionInfoAvailable(WifiP2pInfo info) {
                     Log.e(DefaultValue.TAG, "onConnectionInfoAvailable");
-
                     if (info.groupFormed && info.isGroupOwner) {
                         //确定为组拥有者，创建线程用于接收连接请求
                         //提交图片下载、读取的异步任务
@@ -127,14 +125,20 @@ public class WifiP2pController {
                         //String path = mPath == null ? null : mPath.toString();
                         //FileTransferThread task = new FileTransferThread(isServer(), null, DefaultValue.PORT_TRANSFER, mContext, path);
                         //task.start();
+                        sendMessage("Group Owner");
+
                     } else if (info.groupFormed) {
                         //作为客户端，创建一个线程用于连接组拥有者
+                        if(mCustomDevice == null)
+                            mCustomDevice = new WifiP2pDeviceInfo(null, null);
                         mCustomDevice.setIp(info.groupOwnerAddress.getHostAddress());
                         //HeartBeatTask task = new HeartBeatTask(false, mServerIp, DefaultValue.PORT_HEART_BEAT);
                         //task.start();
                         //String path = mPath == null ? null : mPath.toString();
                         //FileTransferThread task = new FileTransferThread(isServer(), mCustomDevice.getIp(), DefaultValue.PORT_TRANSFER, mContext, path);
                         //task.start();
+
+                        sendMessage("Group Client");
                     }
 
                     String path = mPath == null ? null : mPath.toString();

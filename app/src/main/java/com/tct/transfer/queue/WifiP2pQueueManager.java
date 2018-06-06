@@ -85,6 +85,9 @@ public class WifiP2pQueueManager implements WifiP2pManager.ActionListener {
             case WifiP2pMessage.MESSAGE_CONNECT:
                 manager.connect(channel, config, this);
                 break;
+            case WifiP2pMessage.MESSAGE_CREATE_GROUP:
+                manager.createGroup(channel, this);
+                break;
             case WifiP2pMessage.MESSAGE_UNKNOWN:
             default:
                 break;

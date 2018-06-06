@@ -7,6 +7,7 @@ public class WifiP2pMessage {
     public final static int MESSAGE_REMOVE_GROUP = 101;
     public final static int MESSAGE_DISCOVER_PEERS = 102;
     public final static int MESSAGE_CONNECT = 103;
+    public final static int MESSAGE_CREATE_GROUP = 104;
 
     //public int action;
     public Action action;
@@ -18,7 +19,8 @@ public class WifiP2pMessage {
         CANCEL_CONNECT("cancelConnect", MESSAGE_CANCEL_CONNECT),
         REMOVE_GROUP("removeGroup", MESSAGE_REMOVE_GROUP),
         DISCOVER_PEERS("discoverPeers", MESSAGE_DISCOVER_PEERS),
-        CONNECT("connect", MESSAGE_CONNECT);
+        CONNECT("connect", MESSAGE_CONNECT),
+        CREATE_GROUP("createGroup", MESSAGE_CREATE_GROUP);
 
         private String name;
         private int index;
@@ -56,6 +58,9 @@ public class WifiP2pMessage {
                 break;
             case MESSAGE_CONNECT:
                 this.action = Action.CONNECT;
+                break;
+            case MESSAGE_CREATE_GROUP:
+                this.action = Action.CREATE_GROUP;
                 break;
             case MESSAGE_UNKNOWN:
             default:

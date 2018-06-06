@@ -6,10 +6,12 @@ import android.content.Intent;
 import android.net.NetworkInfo;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pDeviceList;
+import android.net.wifi.p2p.WifiP2pInfo;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.util.Log;
 import com.tct.transfer.DefaultValue;
 import com.tct.transfer.R;
+import com.tct.transfer.queue.WifiP2pMessage;
 
 import java.util.Collection;
 
@@ -42,8 +44,9 @@ public class WifiP2PReceiver extends BroadcastReceiver {
             Collection<WifiP2pDevice> aList = peers.getDeviceList();
             Log.e(DefaultValue.TAG, "aList.size()=" + aList.size() + "," + mWifiP2pInterface.isServer());
 
-            WifiP2pDeviceInfo customDevice = mWifiP2pInterface.getCustomDevice();
-            if(mWifiP2pInterface.isServer() && customDevice != null) {
+            //WifiP2pDeviceInfo customDevice = mWifiP2pInterface.getCustomDevice();
+            if(mWifiP2pInterface.isServer()) {
+                WifiP2pDeviceInfo customDevice = mWifiP2pInterface.getCustomDevice();
                 String customName = customDevice.getName();
                 String customMac = customDevice.getMac();
                 WifiP2pDevice matchedDevice = null;
