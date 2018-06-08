@@ -1,0 +1,66 @@
+package com.tct.transfer.heart;
+
+import android.util.Log;
+import com.tct.transfer.DefaultValue;
+import com.tct.transfer.util.Utils;
+import com.tct.transfer.wifi.WifiP2pDeviceInfo;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.Socket;
+
+public class ReadThread extends Thread {
+
+    private Socket socket;
+    private HeartBeatTask.OnSetCustomDevice listener;
+
+    private OnFinishListener mOnFinishListener;
+    public interface OnFinishListener {
+        void finish();
+    }
+
+    public ReadThread(Socket socket, HeartBeatTask.OnSetCustomDevice listener, OnFinishListener onFinishListener) {
+        this.socket = socket;
+        this.listener = listener;
+        this.mOnFinishListener = onFinishListener;
+    }
+
+    @Override
+    public void run() {
+        try {
+            InputStream in = socket.getInputStream();
+
+            Log.e(DefaultValue.TAG, "ReadThread,start");
+
+
+            byte buf[] = new byte[4];
+            in.read(buf);
+            int totalLen = Utils.byte2int(buf, 0);
+
+            int readLen = 0;
+            int len;
+            byte customDeviceBytes[] = new byte[totalLen];
+            while ((len = in.read(customDeviceBytes)) != -1) {
+                readLen += len;
+            }
+
+            WifiP2pDeviceInfo customDevice = (WifiP2pDeviceInfo) Utils.byteArrayToObject(customDeviceBytes);
+            if (listener != null) {
+                //listener.onResult(readLen == totalLen);
+                String customIp = socket.getInetAddress().toString();
+                customDevice.setIp(customIp);
+                listener.onSet(customDevice);
+            }
+
+            in.close();
+            //Log.e(DefaultValue.TAG, "ReadThread,in,customDevice=" + customDevice);
+        } catch (IOException e) {
+            Log.e(DefaultValue.TAG, "ReadThread,e=" + e.toString());
+        }
+
+        mOnFinishListener.finish();
+    }
+
+}

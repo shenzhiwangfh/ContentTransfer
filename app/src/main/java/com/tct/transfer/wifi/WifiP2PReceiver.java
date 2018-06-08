@@ -42,11 +42,13 @@ public class WifiP2PReceiver extends BroadcastReceiver {
             Log.e(DefaultValue.TAG, "PEERS");
             WifiP2pDeviceList peers = intent.getParcelableExtra(WifiP2pManager.EXTRA_P2P_DEVICE_LIST);
             Collection<WifiP2pDevice> aList = peers.getDeviceList();
-            Log.e(DefaultValue.TAG, "aList.size()=" + aList.size() + "," + mWifiP2pInterface.isServer());
+            Log.e(DefaultValue.TAG, "aList.size()=" + aList.size() + ","
+                    + mWifiP2pInterface.isServer() + ","
+                    + mWifiP2pInterface.getCustomDevice());
 
-            //WifiP2pDeviceInfo customDevice = mWifiP2pInterface.getCustomDevice();
-            if(mWifiP2pInterface.isServer()) {
-                WifiP2pDeviceInfo customDevice = mWifiP2pInterface.getCustomDevice();
+            WifiP2pDeviceInfo customDevice = mWifiP2pInterface.getCustomDevice();
+            if(mWifiP2pInterface.isServer() && (customDevice != null)) {
+                //WifiP2pDeviceInfo customDevice = mWifiP2pInterface.getCustomDevice();
                 String customName = customDevice.getName();
                 String customMac = customDevice.getMac();
                 WifiP2pDevice matchedDevice = null;

@@ -63,7 +63,7 @@ public class FileTransferThread extends Thread {
                     } catch (FileNotFoundException e) {
                     }
 
-                    FileServerAsyncTask.copyFile(is, stream);
+                    FileUtil.copyFile(is, stream);
 
                     Log.e(DefaultValue.TAG, "FileTransferThread,group owner/server/end transfer");
                     if(mTransferStatue != null) mTransferStatue.sendStatue(server, DefaultValue.TRANSFER_END, path);
@@ -79,7 +79,7 @@ public class FileTransferThread extends Thread {
                     f.createNewFile();
 
                     InputStream inputstream = client.getInputStream();
-                    FileServerAsyncTask.copyFile(inputstream, new FileOutputStream(f));
+                    FileUtil.copyFile(inputstream, new FileOutputStream(f));
 
                     Log.e(DefaultValue.TAG, "FileTransferThread,group owner/client/end transfer");
                     if(mTransferStatue != null) mTransferStatue.sendStatue(server, DefaultValue.TRANSFER_END, path);
@@ -112,7 +112,7 @@ public class FileTransferThread extends Thread {
                         is = cr.openInputStream(Uri.parse(path));
                     } catch (FileNotFoundException e) {
                     }
-                    FileServerAsyncTask.copyFile(is, stream);
+                    FileUtil.copyFile(is, stream);
 
                     Log.e(DefaultValue.TAG, "FileTransferThread,group client/server/end transfer");
                     if(mTransferStatue != null) mTransferStatue.sendStatue(server, DefaultValue.TRANSFER_END, path);
@@ -127,7 +127,7 @@ public class FileTransferThread extends Thread {
                     f.createNewFile();
 
                     InputStream inputstream = socket.getInputStream();
-                    FileServerAsyncTask.copyFile(inputstream, new FileOutputStream(f));
+                    FileUtil.copyFile(inputstream, new FileOutputStream(f));
 
                     Log.e(DefaultValue.TAG, "FileTransferThread,group client/client/end transfer");
                     if(mTransferStatue != null) mTransferStatue.sendStatue(server, DefaultValue.TRANSFER_END, path);

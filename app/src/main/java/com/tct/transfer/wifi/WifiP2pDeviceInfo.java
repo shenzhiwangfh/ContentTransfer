@@ -1,6 +1,8 @@
 package com.tct.transfer.wifi;
 
-public class WifiP2pDeviceInfo {
+import java.io.Serializable;
+
+public class WifiP2pDeviceInfo implements Serializable {
     private String name;
     private String mac;
     private String ip;
@@ -12,7 +14,7 @@ public class WifiP2pDeviceInfo {
 
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        return sb.append(name).append("=").append(mac).toString();
+        return sb.append(name).append(",").append(mac).append(",").append(ip).toString();
     }
 
     public String getName() {
@@ -35,8 +37,8 @@ public class WifiP2pDeviceInfo {
         if (data == null || data.isEmpty())
             return null;
 
-        String tmp[] = data.split("=");
-        if (tmp.length != 2)
+        String tmp[] = data.split(",");
+        if (tmp.length != 3)
             return null;
 
         return new WifiP2pDeviceInfo(tmp[0], tmp[1]);

@@ -124,7 +124,18 @@ public class TransferActivity extends AppCompatActivity implements View.OnClickL
                 mQRCode.setImageBitmap(bmp);
 
                 setLooper(true);
-                mHandler.sendEmptyMessage(DefaultValue.MESSAGE_WIFI_DISCOVER);
+                WifiP2pQueueManager queueManager = new WifiP2pQueueManager(mManager, mChannel, new WifiP2pQueueManager.OnFinishListener() {
+                    @Override
+                    public void onFinish() {
+                        Log.e(DefaultValue.TAG, "MESSAGE_WIFI_DISCOVER finish");
+                        mHandler.sendEmptyMessage(DefaultValue.MESSAGE_WIFI_DISCOVER);
+                    }
+                });
+                queueManager
+                        .sendMessage(new WifiP2pMessage(WifiP2pMessage.MESSAGE_REMOVE_GROUP, null))
+                        .sendMessage(new WifiP2pMessage(WifiP2pMessage.MESSAGE_CANCEL_CONNECT, null))
+                        //.sendMessage(new WifiP2pMessage(WifiP2pMessage.MESSAGE_DISCOVER_PEERS, null))
+                        .start();
             }
             break;
         }
@@ -149,8 +160,20 @@ public class TransferActivity extends AppCompatActivity implements View.OnClickL
                     String scanResult = bundle.getString("result");
                     setCustomDevice(WifiP2pDeviceInfo.analysis(scanResult));
                     setServer(true);
+
                     setLooper(true);
-                    mHandler.sendEmptyMessage(DefaultValue.MESSAGE_WIFI_DISCOVER);
+                    WifiP2pQueueManager queueManager = new WifiP2pQueueManager(mManager, mChannel, new WifiP2pQueueManager.OnFinishListener() {
+                        @Override
+                        public void onFinish() {
+                            Log.e(DefaultValue.TAG, "MESSAGE_WIFI_DISCOVER finish");
+                            mHandler.sendEmptyMessage(DefaultValue.MESSAGE_WIFI_DISCOVER);
+                        }
+                    });
+                    queueManager
+                            .sendMessage(new WifiP2pMessage(WifiP2pMessage.MESSAGE_REMOVE_GROUP, null))
+                            .sendMessage(new WifiP2pMessage(WifiP2pMessage.MESSAGE_CANCEL_CONNECT, null))
+                            //.sendMessage(new WifiP2pMessage(WifiP2pMessage.MESSAGE_DISCOVER_PEERS, null))
+                            .start();
                 }
             }
         }
@@ -224,8 +247,8 @@ public class TransferActivity extends AppCompatActivity implements View.OnClickL
                             }
                         });
                         queueManager
-                                .sendMessage(new WifiP2pMessage(WifiP2pMessage.MESSAGE_REMOVE_GROUP, null))
-                                .sendMessage(new WifiP2pMessage(WifiP2pMessage.MESSAGE_CANCEL_CONNECT, null))
+                                //.sendMessage(new WifiP2pMessage(WifiP2pMessage.MESSAGE_REMOVE_GROUP, null))
+                                //.sendMessage(new WifiP2pMessage(WifiP2pMessage.MESSAGE_CANCEL_CONNECT, null))
                                 .sendMessage(new WifiP2pMessage(WifiP2pMessage.MESSAGE_DISCOVER_PEERS, null))
                                 .start();
 

@@ -5,115 +5,104 @@ import android.util.Log;
 
 import com.tct.transfer.DefaultValue;
 import com.tct.transfer.TransferActivity;
+import com.tct.transfer.file.FileUtil;
+import com.tct.transfer.util.Utils;
+import com.tct.transfer.wifi.WifiP2pDeviceInfo;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 
 public class HeartBeatTask extends Thread {
 
+    private boolean owner;
     private boolean server;
     private String ip;
     private int port;
+    private WifiP2pDeviceInfo myDevice;
+    //private WifiP2pDeviceInfo customDevice;
+    //private int mIndex = 0;
 
-    private int mIndex = 0;
-
-    public interface OnClientIp {
-        void onSet(String ip);
+    public interface OnSetCustomDevice {
+        void onSet(WifiP2pDeviceInfo device);
+        //void onResult(boolean result);
     }
 
-    private OnClientIp mOnClientIp;
+    private OnSetCustomDevice mOnSetCustomDevice;
 
-    public void setOnClientIp(OnClientIp onClientIp) {
-        this.mOnClientIp = onClientIp;
+    public void setOnCustomDevice(OnSetCustomDevice onSetCustomDevice) {
+        this.mOnSetCustomDevice = onSetCustomDevice;
     }
 
-    public HeartBeatTask(boolean server, String ip, int port) {
+    public HeartBeatTask(boolean owner, boolean server, String ip, int port, WifiP2pDeviceInfo device) {
+        this.owner = owner;
+        this.server = server;
         this.ip = ip;
         this.port = port;
-        this.server = server;
+        this.myDevice = device;
     }
 
     @Override
     public void run() {
-
-        Log.e(DefaultValue.TAG, "HeartBeatTask,run");
-
-        if (server) {
+        if (owner) {
             try {
+                Log.e(DefaultValue.TAG, "HeartBeatTask,owner,start");
                 ServerSocket serverSocket = new ServerSocket(port);
                 Socket client = serverSocket.accept();
 
-                Log.e(DefaultValue.TAG, "HeartBeatTask,run,accept");
+                if (client.isConnected()) {
+                    //out
+                    OutputStream out = client.getOutputStream();
+                    writeMyDevice(out, myDevice);
 
-                String clientIp = client.getInetAddress().toString();
-                //if (clientIp.startsWith("/"))
-                //    clientIp.substring(1);
-                if(mOnClientIp != null)
-                    mOnClientIp.onSet(clientIp);
+                    //in
+                    InputStream in = client.getInputStream();
+                    readCustomDevice(in);
 
-                Log.e(DefaultValue.TAG, "HeartBeatTask,run,clientIp=" + clientIp);
-
-                InputStream in = client.getInputStream();
-                while (client.isConnected()) {
-                    readStream(in, mIndex);
-                    mIndex++;
-
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-
-                    Log.e(DefaultValue.TAG, "server,mindex=" + mIndex);
+                    //out.flush();
+                    in.close();
+                    out.close();
                 }
 
+                Log.e(DefaultValue.TAG, "HeartBeatTask,owner,end," + server);
+                client.close();
                 serverSocket.close();
             } catch (IOException e) {
-                Log.e(DefaultValue.TAG, e.toString());
+                Log.e(DefaultValue.TAG, "owner," + e.toString());
             }
         } else {
-
-            /*
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            */
-
             Socket socket = new Socket();
             try {
-                Log.e(DefaultValue.TAG, "client111");
-
+                Log.e(DefaultValue.TAG, "HeartBeatTask,client,start");
                 socket.bind(null);
                 socket.connect((new InetSocketAddress(ip, port)), DefaultValue.SOCKET_CONNECT_TIMEOUT);
 
-                Log.e(DefaultValue.TAG, "client,connect=" + socket.isConnected());
+                if (socket.isConnected()) {
+                    //out
+                    OutputStream out = socket.getOutputStream();
+                    writeMyDevice(out, myDevice);
 
-                OutputStream out = socket.getOutputStream();
-                while (socket.isConnected()) {
-                    out.write(int2ByteArray(mIndex));
-                    out.flush();
-                    mIndex++;
+                    //in
+                    InputStream in = socket.getInputStream();
+                    readCustomDevice(in);
 
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-
-                    Log.e(DefaultValue.TAG, "client,mindex=" + mIndex);
+                    //out.flush();
+                    in.close();
+                    out.close();
                 }
+
+                Log.e(DefaultValue.TAG, "HeartBeatTask,client,end," + server);
             } catch (IOException e) {
-                Log.e(DefaultValue.TAG, "client111,e=" + e);
+                Log.e(DefaultValue.TAG, "client," + e.toString());
             } finally {
-
-                Log.e(DefaultValue.TAG, "client111,finally");
-
                 if (socket != null) {
                     if (socket.isConnected()) {
                         try {
@@ -128,30 +117,32 @@ public class HeartBeatTask extends Thread {
         }
     }
 
-    public boolean readStream(InputStream inputStream, int index) {
-        byte buf[] = new byte[4];
+    private void writeMyDevice(OutputStream out, WifiP2pDeviceInfo myDevice) {
         try {
-            inputStream.read(buf);
-            int indexNow = byteArray2Int(buf);
-            inputStream.close();
-            return ((indexNow - index) == 1);
+            byte myDeviceBytes[] = Utils.objectToByteArray(myDevice);
+            int totalLen = myDeviceBytes.length;
+            byte outBytes[] = Utils.byteMergerAll(Utils.int2byte(totalLen), myDeviceBytes);
+            out.write(outBytes);
         } catch (IOException e) {
-            return false;
+            e.printStackTrace();
         }
     }
 
-    public static int byteArray2Int(byte[] b) {
-        if(b.length != 4)
-            return 0;
-        return b[3] & 0xFF | (b[2] & 0xFF) << 8 | (b[1] & 0xFF) << 16 | (b[0] & 0xFF) << 24;
-    }
+    private void readCustomDevice(InputStream in) {
+        try {
+            byte len[] = new byte[4];
+            in.read(len, 0, 4);
+            int totalLen = Utils.byte2int(len, 0);
+            byte customDeviceBytes[] = new byte[totalLen];
+            in.read(customDeviceBytes, 0, totalLen);
+            WifiP2pDeviceInfo customDevice = (WifiP2pDeviceInfo) Utils.byteArrayToObject(customDeviceBytes);
 
-    public static byte[] int2ByteArray(int a) {
-        return new byte[]{
-                (byte) ((a >> 24) & 0xFF),
-                (byte) ((a >> 16) & 0xFF),
-                (byte) ((a >> 8) & 0xFF),
-                (byte) (a & 0xFF)
-        };
+            if(mOnSetCustomDevice != null) {
+                mOnSetCustomDevice.onSet(customDevice);
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

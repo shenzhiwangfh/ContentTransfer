@@ -1,14 +1,11 @@
 package com.tct.transfer.wifi;
 
-import android.app.Activity;
 import android.content.Context;
-import android.content.Intent;
 import android.net.NetworkInfo;
 import android.net.Uri;
 import android.net.wifi.WpsInfo;
 import android.net.wifi.p2p.WifiP2pConfig;
 import android.net.wifi.p2p.WifiP2pDevice;
-import android.net.wifi.p2p.WifiP2pDeviceList;
 import android.net.wifi.p2p.WifiP2pInfo;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Handler;
@@ -16,7 +13,6 @@ import android.os.Message;
 import android.util.Log;
 import android.widget.TextView;
 import com.tct.transfer.DefaultValue;
-import com.tct.transfer.file.FileServerAsyncTask;
 import com.tct.transfer.file.FileTransferThread;
 import com.tct.transfer.heart.HeartBeatTask;
 import com.tct.transfer.queue.WifiP2pMessage;
@@ -144,6 +140,7 @@ public class WifiP2pController {
                         sendMessage("Group Client");
                     }
 
+                    /*
                     String path = mPath == null ? null : mPath.toString();
                     //String ip = (mCustomDevice != null && mCustomDevice.getIp() != null) ? mCustomDevice.getIp() : null;
                     FileTransferThread task = new FileTransferThread(isServer(), ip, DefaultValue.PORT_TRANSFER, mContext, path);
@@ -159,7 +156,19 @@ public class WifiP2pController {
                             mHandler.sendMessage(msg);
                         }
                     });
+                    task.start();
+                    */
 
+                    boolean owner = (ip == null);
+                    HeartBeatTask task = new HeartBeatTask(owner, isServer(), ip, DefaultValue.PORT_HEART_BEAT, mMyDevice);
+                    task.setOnCustomDevice(new HeartBeatTask.OnSetCustomDevice() {
+                        @Override
+                        public void onSet(WifiP2pDeviceInfo device) {
+                            mCustomDevice = device;
+                            Log.e(DefaultValue.TAG, "isServer=" + isServer() + ",mCustomDevice=" + mCustomDevice);
+                            //sendMessage("peer device:" + mCustomDevice.toString());
+                        }
+                    });
                     task.start();
                 }
             });
