@@ -9,7 +9,10 @@ import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.net.NetworkInfo;
 import android.net.Uri;
+import android.net.wifi.WpsInfo;
+import android.net.wifi.p2p.WifiP2pConfig;
 import android.net.wifi.p2p.WifiP2pDevice;
+import android.net.wifi.p2p.WifiP2pInfo;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Bundle;
 import android.os.Handler;
@@ -30,18 +33,16 @@ import com.tct.transfer.file.FileBean;
 import com.tct.transfer.file.FileTransferClient;
 import com.tct.transfer.file.FileTransferServer;
 import com.tct.transfer.file.FileUtil;
+import com.tct.transfer.heart.HeartBeatTask;
 import com.tct.transfer.permission.PermissionHelper;
 import com.tct.transfer.permission.PermissionInterface;
 import com.tct.transfer.permission.PermissionUtil;
 import com.tct.transfer.queue.WifiP2pMessage;
 import com.tct.transfer.queue.WifiP2pQueueManager;
 import com.tct.transfer.wifi.WifiP2PReceiver;
-import com.tct.transfer.wifi.WifiP2pController;
 import com.tct.transfer.wifi.WifiP2pDeviceInfo;
 import com.tct.transfer.wifi.WifiP2pInterface;
 import com.tct.transfer.log.Messenger;
-
-import java.io.File;
 
 public class TransferActivity extends AppCompatActivity implements View.OnClickListener, WifiP2pInterface, PermissionInterface {
 
@@ -60,9 +61,15 @@ public class TransferActivity extends AppCompatActivity implements View.OnClickL
     private WifiP2pManager mManager;
     private WifiP2pManager.Channel mChannel;
 
-    private WifiP2pController mWifiP2pController;
+    //private WifiP2pController mWifiP2pController;
     private PermissionHelper mPermissionHelper;
 
+    private boolean mServer = false;
+    private int mWifiState = WifiP2pManager.WIFI_P2P_STATE_DISABLED;
+    private boolean mLooper = false;
+
+    private WifiP2pDeviceInfo mCustomDevice = null;
+    private WifiP2pDeviceInfo mMyDevice = null;
     private FileBean mBean = new FileBean();
 
     @Override
@@ -90,7 +97,7 @@ public class TransferActivity extends AppCompatActivity implements View.OnClickL
         mManager = (WifiP2pManager) getSystemService(Context.WIFI_P2P_SERVICE);
         mChannel = mManager.initialize(this, getMainLooper(), null);
 
-        mWifiP2pController = new WifiP2pController(this, mHandler, mManager, mChannel);
+        //mWifiP2pController = new WifiP2pController(this, mHandler, mManager, mChannel);
         //mWifiP2pController.setLog(mLog);
         Messenger.init(mContext, mHandler, DefaultValue.MESSAGE_LOG);
 
@@ -137,7 +144,10 @@ public class TransferActivity extends AppCompatActivity implements View.OnClickL
                 Bitmap bmp = EncodingUtils.createQRCode(shareInfo, len, len, null);
                 mQRCode.setImageBitmap(bmp);
 
-                setLooper(true);
+                mLooper = true;
+                mQRCode.setVisibility(mLooper ? View.VISIBLE : View.INVISIBLE);
+
+
                 WifiP2pQueueManager queueManager = new WifiP2pQueueManager(mManager, mChannel, new WifiP2pQueueManager.OnFinishListener() {
                     @Override
                     public void onFinish() {
@@ -160,7 +170,7 @@ public class TransferActivity extends AppCompatActivity implements View.OnClickL
         if (resultCode == Activity.RESULT_OK) {
             if (requestCode == DefaultValue.REQUEST_CODE_QUERY_FILE) {
                 mBean.path = FileUtil.getPath(mContext, data.getData());
-                mWifiP2pController.setPath(mBean.path);
+                //mWifiP2pController.setPath(mBean.path);
 
                 if (PermissionUtil.hasPermission(this, Manifest.permission.CAMERA)) {
                     Intent intent = new Intent(TransferActivity.this, CaptureActivity.class);
@@ -175,7 +185,9 @@ public class TransferActivity extends AppCompatActivity implements View.OnClickL
                     setCustomDevice(WifiP2pDeviceInfo.analysis(scanResult));
                     setServer(true);
 
-                    setLooper(true);
+                    mLooper = true;
+                    mQRCode.setVisibility(mLooper ? View.VISIBLE : View.INVISIBLE);
+
                     WifiP2pQueueManager queueManager = new WifiP2pQueueManager(mManager, mChannel, new WifiP2pQueueManager.OnFinishListener() {
                         @Override
                         public void onFinish() {
@@ -248,7 +260,7 @@ public class TransferActivity extends AppCompatActivity implements View.OnClickL
                 case DefaultValue.MESSAGE_WIFI_DISCOVER:
                     Log.e(DefaultValue.TAG, "handler,MESSAGE_WIFI_DISCOVER");
 
-                    if (canLooper()) {
+                    if (mLooper) {
                         //Log.e(DefaultValue.TAG, "handler,MESSAGE_WIFI_DISCOVER,loop");
                         Messenger.sendMessage(R.string.status_p2p_peer);
 
@@ -349,88 +361,140 @@ public class TransferActivity extends AppCompatActivity implements View.OnClickL
 
     @Override
     public void setMyDevice(WifiP2pDeviceInfo myDevice) {
-        mWifiP2pController.setMyDevice(myDevice);
+        //mWifiP2pController.setMyDevice(myDevice);
+        mMyDevice = myDevice;
     }
 
     @Override
     public WifiP2pDeviceInfo getMyDevice() {
-        return mWifiP2pController.getMyDevice();
+        return mMyDevice;//mWifiP2pController.getMyDevice();
     }
 
     @Override
     public void setCustomDevice(WifiP2pDeviceInfo customDevice) {
-        mWifiP2pController.setCustomDevice(customDevice);
+        //mWifiP2pController.setCustomDevice(customDevice);
+        mCustomDevice = customDevice;
     }
 
     @Override
     public WifiP2pDeviceInfo getCustomDevice() {
-        return mWifiP2pController.getCustomDevice();
+        return mCustomDevice;//mWifiP2pController.getCustomDevice();
     }
 
     @Override
     public void setServer(boolean server) {
-        mWifiP2pController.setServer(server);
+        //mWifiP2pController.setServer(server);
+        mServer = server;
+        mHandler.sendEmptyMessage(DefaultValue.MESSAGE_WIFI_STATUS_CHANGED);
     }
 
     @Override
     public boolean isServer() {
-        return mWifiP2pController.isServer();
+        //return mWifiP2pController.isServer();
+        return mServer;
     }
 
-    @Override
-    public void setLooper(boolean looper) {
-        mWifiP2pController.setLooper(looper);
-        mQRCode.setVisibility(looper ? View.VISIBLE : View.INVISIBLE);
-    }
+    //@Override
+    //public void setLooper(boolean looper) {
+    //    //mWifiP2pController.setLooper(looper);
+    //    mLooper = looper;
+    //    mQRCode.setVisibility(looper ? View.VISIBLE : View.INVISIBLE);
+    //}
 
-    @Override
-    public boolean canLooper() {
-        return mWifiP2pController.canLooper();
-    }
+    //@Override
+    //public boolean canLooper() {
+    //    return mLooper;
+        //return mWifiP2pController.canLooper();
+    //}
 
     @Override
     public void setWifiState(int state) {
-        mWifiP2pController.setWifiState(state);
+        //mWifiP2pController.setWifiState(state);
+        mWifiState = state;
     }
 
     @Override
     public boolean isWifiOpened() {
-        return mWifiP2pController.isWifiOpened();
+        //return mWifiP2pController.isWifiOpened();
+        return (mWifiState == WifiP2pManager.WIFI_P2P_STATE_ENABLED);
     }
 
     @Override
     public void connect(WifiP2pDevice device) {
-        mWifiP2pController.connect(device);
+        if (device.status == WifiP2pDevice.CONNECTED) {
+            //showDialog(DIALOG_DISCONNECT);
+            Log.e(DefaultValue.TAG, "p2p connected");
+        } else if (device.status == WifiP2pDevice.INVITED) {
+            //showDialog(DIALOG_CANCEL_CONNECT);
+            Log.e(DefaultValue.TAG, "p2p invited");
+        } else {
+            Log.e(DefaultValue.TAG, "start p2p connect:" + device.deviceName);
+            WifiP2pConfig config = new WifiP2pConfig();
+            config.deviceAddress = device.deviceAddress;
+            config.wps.setup = WpsInfo.PBC;
+
+            WifiP2pQueueManager queueManager = new WifiP2pQueueManager(mManager, mChannel, null);
+            queueManager.setConfig(config);
+            queueManager
+                    //.sendMessage(new WifiP2pMessage(WifiP2pMessage.MESSAGE_CREATE_GROUP, null))
+                    .sendMessage(new WifiP2pMessage(WifiP2pMessage.MESSAGE_CONNECT, null))
+                    .start();
+        }
     }
 
     @Override
     public void requestConnect(NetworkInfo networkInfo) {
-        mWifiP2pController.requestConnect(networkInfo);
+        //mWifiP2pController.requestConnect(networkInfo);
+        mLooper = false;
+
+        if (networkInfo.isConnected()) {
+            mManager.requestConnectionInfo(mChannel, new WifiP2pManager.ConnectionInfoListener() {
+
+                @Override
+                public void onConnectionInfoAvailable(WifiP2pInfo info) {
+                    Log.e(DefaultValue.TAG, "onConnectionInfoAvailable");
+
+                    String ip = null;
+                    if (info.groupFormed && info.isGroupOwner) {
+                        //确定为组拥有者，创建线程用于接收连接请求
+                        //提交图片下载、读取的异步任务
+                        Messenger.sendMessage("Group Owner");
+                    } else if (info.groupFormed) {
+                        //作为客户端，创建一个线程用于连接组拥有者
+                        ip = info.groupOwnerAddress.getHostAddress();
+                        Messenger.sendMessage("Group Client");
+                    }
+
+                    boolean owner = (ip == null);
+                    //FileBean bean = new FileBean();
+                    //if(mPath != null)
+                    //    bean.path = mPath;
+
+                    HeartBeatTask task = new HeartBeatTask(owner, isServer(), ip, DefaultValue.PORT_HEART_BEAT, mMyDevice, mBean);
+                    /*
+                    task.setOnCustomDevice(new HeartBeatTask.OnSetCustomDevice() {
+                        @Override
+                        public void onSet(WifiP2pDeviceInfo device) {
+                            mCustomDevice = device;
+                            Log.e(DefaultValue.TAG, "isServer=" + isServer() + ",mCustomDevice=" + mCustomDevice.toString());
+                            //sendMessage("peer device:" + mCustomDevice.toString());
+
+                            //Message msg = Message.obtain();
+                            //msg.what = DefaultValue.MESSAGE_TRANSFER_START;
+                            //msg.obj = mCustomDevice;
+                            //mHandler.sendMessageDelayed(msg, 3000);
+                        }
+                    });
+                    */
+                    task.start();
+                }
+            });
+        }
     }
 
-    /*
-    @Override
-    public void sendMessage(int resId, Object... args) {
-        mWifiP2pController.sendMessage(resId, args);
-        mScroll.scrollTo(0, mLog.getMeasuredHeight());
-    }
 
-    @Override
-    public void sendMessage(String msg, Object... args) {
-        mWifiP2pController.sendMessage(msg, args);
-        mScroll.scrollTo(0, mLog.getMeasuredHeight());
-    }
 
-    @Override
-    public void clearMessage() {
-        mWifiP2pController.clearMessage();
-    }
-    */
-
-    //public void setPath(Uri paht) {
-    //    mWifiP2pController.setPath(paht);
-    //}
-
+    ///////////////////////////////////////
     @Override
     public int getPermissionsRequestCode() {
         return DefaultValue.REQUEST_CODE_PERMISSION;

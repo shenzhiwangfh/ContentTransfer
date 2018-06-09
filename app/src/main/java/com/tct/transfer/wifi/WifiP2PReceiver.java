@@ -70,7 +70,7 @@ public class WifiP2PReceiver extends BroadcastReceiver {
         }
         /*Respond to new connection or disconnections*/
         else if (WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION.equals(action)) {
-            mWifiP2pInterface.setLooper(false);
+            //mWifiP2pInterface.setLooper(false);
             NetworkInfo networkInfo = intent.getParcelableExtra(WifiP2pManager.EXTRA_NETWORK_INFO);
             Log.e(DefaultValue.TAG, "CONNECTION:" + networkInfo.isConnected());
 

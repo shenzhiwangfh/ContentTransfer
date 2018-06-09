@@ -13,8 +13,8 @@ public interface WifiP2pInterface {
     void setServer(boolean server);
     boolean isServer();
 
-    void setLooper(boolean looper);
-    boolean canLooper();
+    //void setLooper(boolean looper);
+    //boolean canLooper();
 
     void setWifiState(int state);
     boolean isWifiOpened();
