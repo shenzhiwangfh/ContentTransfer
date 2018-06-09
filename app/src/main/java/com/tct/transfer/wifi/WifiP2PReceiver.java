@@ -6,17 +6,16 @@ import android.content.Intent;
 import android.net.NetworkInfo;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pDeviceList;
-import android.net.wifi.p2p.WifiP2pInfo;
 import android.net.wifi.p2p.WifiP2pManager;
-import android.util.Log;
-import com.tct.transfer.DefaultValue;
-import com.tct.transfer.R;
-import com.tct.transfer.queue.WifiP2pMessage;
-import com.tct.transfer.log.Messenger;
-
 import java.util.Collection;
 
+import com.tct.transfer.R;
+import com.tct.transfer.log.LogUtils;
+import com.tct.transfer.log.Messenger;
+
 public class WifiP2PReceiver extends BroadcastReceiver {
+    private final static String TAG = "WifiP2PReceiver";
+
     private WifiP2pInterface mWifiP2pInterface;
 
     public WifiP2PReceiver(WifiP2pInterface wifiP2pInterface) {
@@ -29,7 +28,7 @@ public class WifiP2PReceiver extends BroadcastReceiver {
         /*check if the wifi is enable*/
         if (WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION.equals(action)) {
             int state = intent.getIntExtra(WifiP2pManager.EXTRA_WIFI_STATE, WifiP2pManager.WIFI_P2P_STATE_DISABLED);
-            Log.e(DefaultValue.TAG, "STATE:" + state);
+            LogUtils.e(TAG, "STATE:" + state);
             mWifiP2pInterface.setWifiState(state);
 
             Messenger.sendMessage(mWifiP2pInterface.isWifiOpened()
@@ -40,15 +39,18 @@ public class WifiP2PReceiver extends BroadcastReceiver {
         else if (WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION.equals(action)) {
             Messenger.sendMessage(R.string.status_p2p_peer_changed);
 
-            Log.e(DefaultValue.TAG, "PEERS");
+            LogUtils.e(TAG, "PEERS");
             WifiP2pDeviceList peers = intent.getParcelableExtra(WifiP2pManager.EXTRA_P2P_DEVICE_LIST);
             Collection<WifiP2pDevice> aList = peers.getDeviceList();
-            Log.e(DefaultValue.TAG, "aList.size()=" + aList.size() + ","
-                    + mWifiP2pInterface.isServer() + ","
-                    + mWifiP2pInterface.getCustomDevice());
 
+            WifiP2pDeviceInfo myDevice = mWifiP2pInterface.getMyDevice();
             WifiP2pDeviceInfo customDevice = mWifiP2pInterface.getCustomDevice();
-            if(mWifiP2pInterface.isServer() && (customDevice != null)) {
+
+            LogUtils.e(TAG, "aList.size()=" + aList.size() + ","
+                    + "myDevice=" + myDevice.toString() + ","
+                    + "customDevice=" + ((customDevice != null) ? customDevice.toString() : null));
+
+            if(myDevice.isServer() && (customDevice != null)) {
                 //WifiP2pDeviceInfo customDevice = mWifiP2pInterface.getCustomDevice();
                 String customName = customDevice.getName();
                 String customMac = customDevice.getMac();
@@ -56,7 +58,7 @@ public class WifiP2PReceiver extends BroadcastReceiver {
                 for (WifiP2pDevice peer : aList) {
                     if (customName.equals(peer.deviceName) && customMac.equals(peer.deviceAddress)) {
                         matchedDevice = peer;
-                        Log.e(DefaultValue.TAG, "PEERS matched");
+                        LogUtils.e(TAG, "PEERS matched");
                         break;
                     }
                     Messenger.sendMessage("    " + peer.deviceName);
@@ -72,7 +74,7 @@ public class WifiP2PReceiver extends BroadcastReceiver {
         else if (WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION.equals(action)) {
             //mWifiP2pInterface.setLooper(false);
             NetworkInfo networkInfo = intent.getParcelableExtra(WifiP2pManager.EXTRA_NETWORK_INFO);
-            Log.e(DefaultValue.TAG, "CONNECTION:" + networkInfo.isConnected());
+            LogUtils.e(TAG, "CONNECTION:" + networkInfo.isConnected());
 
             Messenger.sendMessage(networkInfo.isConnected()
                     ? R.string.status_p2p_connected
@@ -85,8 +87,8 @@ public class WifiP2PReceiver extends BroadcastReceiver {
         /*Respond to this device's wifi state changing*/
         else if (WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION.equals(action)) {
             WifiP2pDevice thisDevice = intent.getParcelableExtra(WifiP2pManager.EXTRA_WIFI_P2P_DEVICE);
-            Log.e(DefaultValue.TAG, "THIS_DEVICE/deviceName=" + thisDevice.deviceName + ",deviceAddress=" + thisDevice.deviceAddress);
-            mWifiP2pInterface.setMyDevice(new WifiP2pDeviceInfo(thisDevice.deviceName, thisDevice.deviceAddress));
+            LogUtils.e(TAG, "THIS_DEVICE/deviceName=" + thisDevice.deviceName + ",deviceAddress=" + thisDevice.deviceAddress);
+            mWifiP2pInterface.setMyDevice(thisDevice.deviceName, thisDevice.deviceAddress);
             Messenger.sendMessage(R.string.status_host, thisDevice.deviceName);
         }
     }

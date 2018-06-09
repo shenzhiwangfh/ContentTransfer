@@ -5,7 +5,13 @@ import java.io.Serializable;
 public class WifiP2pDeviceInfo implements Serializable {
     private String name;
     private String mac;
-    private String ip;
+    private String peerIP;
+    private boolean owner;
+    private boolean server = false;
+
+    public WifiP2pDeviceInfo() {
+
+    }
 
     public WifiP2pDeviceInfo(String name, String mac) {
         this.name = name;
@@ -14,23 +20,51 @@ public class WifiP2pDeviceInfo implements Serializable {
 
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        return sb.append(name).append(",").append(mac).append(",").append(ip).toString();
+        return sb.append(name).append(",")
+                .append(mac).append(",")
+                .append(peerIP).append(",")
+                .append(owner).append(",")
+                .append(server).toString();
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public String getName() {
         return name;
     }
 
+    public void setMac(String mac) {
+        this.mac = mac;
+    }
+
     public String getMac() {
         return mac;
     }
 
-    public String getIp() {
-        return ip;
+    public void setPeerIp(String peerIP) {
+        this.peerIP = peerIP;
     }
 
-    public void setIp(String ip) {
-        this.ip = ip;
+    public String getPeerIp() {
+        return peerIP;
+    }
+
+    public void setOwner(boolean owner) {
+        this.owner = owner;
+    }
+
+    public boolean isOwner() {
+        return owner;
+    }
+
+    public void setServer(boolean server) {
+        this.server = server;
+    }
+
+    public boolean isServer() {
+        return server;
     }
 
     public static WifiP2pDeviceInfo analysis(String data) {
@@ -38,7 +72,7 @@ public class WifiP2pDeviceInfo implements Serializable {
             return null;
 
         String tmp[] = data.split(",");
-        if (tmp.length != 3)
+        if (tmp.length != 5)
             return null;
 
         return new WifiP2pDeviceInfo(tmp[0], tmp[1]);

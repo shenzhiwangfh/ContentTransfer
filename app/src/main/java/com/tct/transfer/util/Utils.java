@@ -63,20 +63,17 @@ public class Utils {
             objectOutputStream.flush();
             bytes = byteArrayOutputStream.toByteArray();
         } catch (IOException e) {
-            Log.e(DefaultValue.TAG, "objectToByteArray,e1=" + e.toString());
         } finally {
             if (objectOutputStream != null) {
                 try {
                     objectOutputStream.close();
                 } catch (IOException e) {
-                    Log.e(DefaultValue.TAG, "objectToByteArray,e2=" + e.toString());
                 }
             }
             if (byteArrayOutputStream != null) {
                 try {
                     byteArrayOutputStream.close();
                 } catch (IOException e) {
-                    Log.e(DefaultValue.TAG, "objectToByteArray,e3=" + e.toString());
                 }
             }
 

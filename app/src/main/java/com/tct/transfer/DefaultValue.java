@@ -4,7 +4,7 @@ import android.os.Environment;
 
 public class DefaultValue {
 
-    public final static String TAG = "Transfer";
+    //public final static String TAG = "ContentTransfer";
     public final static int QR_CODE_LEN = 400;
 
     public final static int REQUEST_CODE_QUERY_FILE = 0;

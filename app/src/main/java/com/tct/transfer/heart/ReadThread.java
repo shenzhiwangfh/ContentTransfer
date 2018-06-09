@@ -48,14 +48,14 @@ public class ReadThread extends Thread {
             if (listener != null) {
                 //listener.onResult(readLen == totalLen);
                 String customIp = socket.getInetAddress().toString();
-                customDevice.setIp(customIp);
+                //customDevice.setIp(customIp);
                 listener.onSet(customDevice);
             }
 
             in.close();
-            //Log.e(DefaultValue.TAG, "ReadThread,in,customDevice=" + customDevice);
+            //LogUtils.e(TAG, "ReadThread,in,customDevice=" + customDevice);
         } catch (IOException e) {
-            Log.e(DefaultValue.TAG, "ReadThread,e=" + e.toString());
+            //LogUtils.e(TAG, "ReadThread,e=" + e.toString());
         }
 
         mOnFinishListener.finish();

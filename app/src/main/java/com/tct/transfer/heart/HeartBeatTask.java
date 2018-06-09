@@ -1,39 +1,29 @@
 package com.tct.transfer.heart;
 
-import android.content.ContentResolver;
-import android.util.Log;
 
 import com.tct.transfer.DefaultValue;
-import com.tct.transfer.TransferActivity;
-import com.tct.transfer.file.FileBean;
-import com.tct.transfer.file.FileTransfer;
-import com.tct.transfer.file.FileUtil;
+import com.tct.transfer.log.LogUtils;
+import com.tct.transfer.log.Messenger;
 import com.tct.transfer.util.Utils;
 import com.tct.transfer.wifi.WifiP2pDeviceInfo;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketException;
 
 public class HeartBeatTask extends Thread {
 
-    private boolean owner;
-    private boolean server;
-    private String ip;
+    private final static String TAG = "HeartBeatTask";
+
     private int port;
     private WifiP2pDeviceInfo myDevice;
     //private WifiP2pDeviceInfo customDevice;
     //private int mIndex = 0;
 
-    private FileBean bean;
+    //private FileBean bean;
 
     public interface OnSetCustomDevice {
         void onSet(WifiP2pDeviceInfo device);
@@ -46,23 +36,20 @@ public class HeartBeatTask extends Thread {
         this.mOnSetCustomDevice = onSetCustomDevice;
     }
 
-    public HeartBeatTask(boolean owner, boolean server, String ip, int port, WifiP2pDeviceInfo device, FileBean bean) {
-        this.owner = owner;
-        this.server = server;
-        this.ip = ip;
+    public HeartBeatTask(int port, WifiP2pDeviceInfo device/*, FileBean bean*/) {
         this.port = port;
         this.myDevice = device;
-        this.bean = bean;
+        //this.bean = bean;
     }
 
     @Override
     public void run() {
-        if (owner) {
+        if (myDevice.isOwner()) {
             try {
-                Log.e(DefaultValue.TAG, "HeartBeatTask,owner,start,port=" + port);
+                LogUtils.e(TAG, "group owner,start,port=" + port);
                 ServerSocket serverSocket = new ServerSocket(port);
                 Socket client = serverSocket.accept();
-                ip = client.getInetAddress().getHostAddress();
+                //ip = client.getInetAddress().getHostAddress();
 
                 if (client.isConnected()) {
                     //out
@@ -73,31 +60,33 @@ public class HeartBeatTask extends Thread {
                     InputStream in = client.getInputStream();
                     readCustomDevice(in);
 
-                    if(server) {
+                    //transfer file
+                    /*
+                    if (myDevice.isServer()) {
                         FileTransfer.sendFile(in, out, bean);
                     } else {
                         FileTransfer.recvFile(in, out, bean);
                     }
-
-
+                    */
 
                     //out.flush();
                     in.close();
                     out.close();
                 }
 
-                Log.e(DefaultValue.TAG, "HeartBeatTask,owner,end," + server);
+                LogUtils.e(TAG, "group owner,end");
                 client.close();
                 serverSocket.close();
             } catch (IOException e) {
-                Log.e(DefaultValue.TAG, "owner,e=" + e.toString());
+                LogUtils.e(TAG, "group owner,e=" + e.toString());
             }
         } else {
             Socket socket = new Socket();
             try {
-                Log.e(DefaultValue.TAG, "HeartBeatTask,client,start(ip=" + ip + ",port=" + port + ")");
+                String peerIP = myDevice.getPeerIp();
+                LogUtils.e(TAG, "group client,start(ip=" + peerIP + ",port=" + port + ")");
                 socket.bind(null);
-                socket.connect((new InetSocketAddress(ip, port)), DefaultValue.SOCKET_CONNECT_TIMEOUT);
+                socket.connect((new InetSocketAddress(peerIP, port)), DefaultValue.SOCKET_CONNECT_TIMEOUT);
 
                 if (socket.isConnected()) {
                     //out
@@ -108,29 +97,30 @@ public class HeartBeatTask extends Thread {
                     InputStream in = socket.getInputStream();
                     readCustomDevice(in);
 
-                    if(server) {
+                    //transfer file
+                    /*
+                    if (myDevice.isServer()) {
                         FileTransfer.sendFile(in, out, bean);
                     } else {
                         FileTransfer.recvFile(in, out, bean);
                     }
+                    */
 
                     //out.flush();
                     in.close();
                     out.close();
                 }
 
-                Log.e(DefaultValue.TAG, "HeartBeatTask,client,end," + server);
+                LogUtils.e(TAG, "group client,end");
             } catch (IOException e) {
-                Log.e(DefaultValue.TAG, "client,e=" + e.toString());
+                LogUtils.e(TAG, "group client,e=" + e.toString());
             } finally {
-                if (socket != null) {
-                    if (socket.isConnected()) {
-                        try {
-                            socket.close();
-                        } catch (IOException e) {
-                            // Give up
-                            e.printStackTrace();
-                        }
+                if (socket.isConnected()) {
+                    try {
+                        socket.close();
+                    } catch (IOException e) {
+                        // Give up
+                        e.printStackTrace();
                     }
                 }
             }
@@ -156,9 +146,9 @@ public class HeartBeatTask extends Thread {
             byte customDeviceBytes[] = new byte[totalLen];
             in.read(customDeviceBytes, 0, totalLen);
             WifiP2pDeviceInfo customDevice = (WifiP2pDeviceInfo) Utils.byteArrayToObject(customDeviceBytes);
-            customDevice.setIp(ip);
+            //customDevice.setIp(ip);
 
-            if(mOnSetCustomDevice != null) {
+            if (mOnSetCustomDevice != null) {
                 mOnSetCustomDevice.onSet(customDevice);
             }
 

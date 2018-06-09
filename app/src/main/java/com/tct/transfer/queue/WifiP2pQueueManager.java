@@ -2,11 +2,11 @@ package com.tct.transfer.queue;
 
 import android.net.wifi.p2p.WifiP2pConfig;
 import android.net.wifi.p2p.WifiP2pManager;
-import android.util.Log;
-
-import com.tct.transfer.DefaultValue;
+import com.tct.transfer.log.LogUtils;
 
 public class WifiP2pQueueManager implements WifiP2pManager.ActionListener {
+    private final static String TAG = "WifiP2pQueueManager";
+
     private WifiP2pManager manager;
     private WifiP2pManager.Channel channel;
     private WifiP2pConfig config;
@@ -17,7 +17,7 @@ public class WifiP2pQueueManager implements WifiP2pManager.ActionListener {
     @Override
     public void onSuccess() {
         WifiP2pMessage msg = queue.pickMessage();
-        Log.e(DefaultValue.TAG, msg.action.getName() + ",onSuccess");
+        LogUtils.e(TAG, msg.action.getName() + ",onSuccess");
 
         if (msg.listener != null) msg.listener.onSuccess();
         queue.removeMessage();
@@ -27,7 +27,7 @@ public class WifiP2pQueueManager implements WifiP2pManager.ActionListener {
     @Override
     public void onFailure(int reason) {
         WifiP2pMessage msg = queue.pickMessage();
-        Log.e(DefaultValue.TAG, msg.action.getName() + ",onFailure");
+        LogUtils.e(TAG, msg.action.getName() + ",onFailure");
 
         if (msg.listener != null) msg.listener.onFailure();
         queue.removeMessage();
@@ -99,7 +99,7 @@ public class WifiP2pQueueManager implements WifiP2pManager.ActionListener {
         @Override
         public void run() {
 
-            Log.e(DefaultValue.TAG,  "queueThread start");
+            LogUtils.e(TAG,  "queueThread start");
 
             while (!queue.isIdle()) {
                 WifiP2pMessage msg = queue.pickMessage();
@@ -111,13 +111,13 @@ public class WifiP2pQueueManager implements WifiP2pManager.ActionListener {
                         e.printStackTrace();
                     }
 
-                    Log.e(DefaultValue.TAG,  "queueThread while");
+                    LogUtils.e(TAG,  "queueThread while");
                 }
                 queue.removeMessage();
             }
 
             if(listener != null) listener.onFinish();
-            Log.e(DefaultValue.TAG,  "queueThread end");
+            LogUtils.e(TAG,  "queueThread end");
         }
     };
     */

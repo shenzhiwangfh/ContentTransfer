@@ -4,14 +4,14 @@ import android.net.NetworkInfo;
 import android.net.wifi.p2p.WifiP2pDevice;
 
 public interface WifiP2pInterface {
-    void setMyDevice(WifiP2pDeviceInfo myDevice);
+    void setMyDevice(String name, String mac);
     WifiP2pDeviceInfo getMyDevice();
 
     void setCustomDevice(WifiP2pDeviceInfo customDevice);
     WifiP2pDeviceInfo getCustomDevice();
 
-    void setServer(boolean server);
-    boolean isServer();
+    //void setServer(boolean server);
+    //boolean isServer();
 
     //void setLooper(boolean looper);
     //boolean canLooper();
