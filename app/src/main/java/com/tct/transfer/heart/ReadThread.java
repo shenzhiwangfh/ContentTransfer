@@ -1,6 +1,7 @@
 package com.tct.transfer.heart;
 
 import android.util.Log;
+
 import com.tct.transfer.DefaultValue;
 import com.tct.transfer.util.Utils;
 import com.tct.transfer.wifi.WifiP2pDeviceInfo;
@@ -17,6 +18,7 @@ public class ReadThread extends Thread {
     private HeartBeatTask.OnSetCustomDevice listener;
 
     private OnFinishListener mOnFinishListener;
+
     public interface OnFinishListener {
         void finish();
     }
@@ -31,10 +33,6 @@ public class ReadThread extends Thread {
     public void run() {
         try {
             InputStream in = socket.getInputStream();
-
-            Log.e(DefaultValue.TAG, "ReadThread,start");
-
-
             byte buf[] = new byte[4];
             in.read(buf);
             int totalLen = Utils.byte2int(buf, 0);
@@ -62,5 +60,4 @@ public class ReadThread extends Thread {
 
         mOnFinishListener.finish();
     }
-
 }

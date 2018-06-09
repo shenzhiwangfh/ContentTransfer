@@ -26,6 +26,10 @@ import android.widget.Toast;
 
 import com.tct.libzxing.zxing.activity.CaptureActivity;
 import com.tct.libzxing.zxing.encoding.EncodingUtils;
+import com.tct.transfer.file.FileBean;
+import com.tct.transfer.file.FileTransferClient;
+import com.tct.transfer.file.FileTransferServer;
+import com.tct.transfer.file.FileUtil;
 import com.tct.transfer.permission.PermissionHelper;
 import com.tct.transfer.permission.PermissionInterface;
 import com.tct.transfer.permission.PermissionUtil;
@@ -35,9 +39,14 @@ import com.tct.transfer.wifi.WifiP2PReceiver;
 import com.tct.transfer.wifi.WifiP2pController;
 import com.tct.transfer.wifi.WifiP2pDeviceInfo;
 import com.tct.transfer.wifi.WifiP2pInterface;
+import com.tct.transfer.log.Messenger;
 
+import java.io.File;
 
 public class TransferActivity extends AppCompatActivity implements View.OnClickListener, WifiP2pInterface, PermissionInterface {
+
+    private Context mContext;
+
     private Button mShare;
     //private TextView mFileName;
     private Button mAccept;
@@ -54,10 +63,14 @@ public class TransferActivity extends AppCompatActivity implements View.OnClickL
     private WifiP2pController mWifiP2pController;
     private PermissionHelper mPermissionHelper;
 
+    private FileBean mBean = new FileBean();
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.transfer);
+
+        mContext = this;
 
         mPermissionHelper = new PermissionHelper(this, this);
         mPermissionHelper.requestPermissions();
@@ -78,7 +91,8 @@ public class TransferActivity extends AppCompatActivity implements View.OnClickL
         mChannel = mManager.initialize(this, getMainLooper(), null);
 
         mWifiP2pController = new WifiP2pController(this, mHandler, mManager, mChannel);
-        mWifiP2pController.setLog(mLog);
+        //mWifiP2pController.setLog(mLog);
+        Messenger.init(mContext, mHandler, DefaultValue.MESSAGE_LOG);
 
         mReceiver = new WifiP2PReceiver(this);
 
@@ -100,7 +114,7 @@ public class TransferActivity extends AppCompatActivity implements View.OnClickL
         switch (id) {
             case R.id.share_file: {
                 //setServer(true);
-                clearMessage();
+                Messenger.clearMessage();
 
                 Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
                 intent.setType("image/*"); //选择图片
@@ -114,7 +128,7 @@ public class TransferActivity extends AppCompatActivity implements View.OnClickL
             break;
             case R.id.accept_file: {
                 setServer(false);
-                clearMessage();
+                Messenger.clearMessage();
 
                 int height = mQRCode.getHeight();
                 int width = mQRCode.getWidth();
@@ -145,8 +159,8 @@ public class TransferActivity extends AppCompatActivity implements View.OnClickL
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (resultCode == Activity.RESULT_OK) {
             if (requestCode == DefaultValue.REQUEST_CODE_QUERY_FILE) {
-                Uri uri = data.getData();
-                mWifiP2pController.setPath(uri);
+                mBean.path = FileUtil.getPath(mContext, data.getData());
+                mWifiP2pController.setPath(mBean.path);
 
                 if (PermissionUtil.hasPermission(this, Manifest.permission.CAMERA)) {
                     Intent intent = new Intent(TransferActivity.this, CaptureActivity.class);
@@ -236,7 +250,7 @@ public class TransferActivity extends AppCompatActivity implements View.OnClickL
 
                     if (canLooper()) {
                         //Log.e(DefaultValue.TAG, "handler,MESSAGE_WIFI_DISCOVER,loop");
-                        sendMessage(R.string.status_p2p_peer);
+                        Messenger.sendMessage(R.string.status_p2p_peer);
 
                         WifiP2pQueueManager queueManager = new WifiP2pQueueManager(mManager, mChannel, new WifiP2pQueueManager.OnFinishListener() {
                             @Override
@@ -254,6 +268,41 @@ public class TransferActivity extends AppCompatActivity implements View.OnClickL
 
                     }
                     break;
+                case DefaultValue.MESSAGE_TRANSFER_START:
+
+                    if (isServer()) {
+                        //mBean.path = mWifiP2pController.getPath();
+                        FileTransferServer server = new FileTransferServer(mContext, DefaultValue.PORT_TRANSFER, mBean);
+                        server.start();
+                    } else {
+                        FileTransferClient client = new FileTransferClient(mContext, getCustomDevice().getIp(), DefaultValue.PORT_TRANSFER);
+                        client.start();
+                    }
+
+                    /*
+                    FileTransferThread task = new FileTransferThread(
+                            isServer(),
+                            getCustomDevice().getIp(),
+                            DefaultValue.PORT_TRANSFER,
+                            TransferActivity.this,
+                            mWifiP2pController.getPath());
+                    task.setTransferStatue(new FileTransferThread.TransferStatue() {
+                        @Override
+                        public void sendStatue(boolean server, int status, String file) {
+                            //sendMessage("" + server + "," + status);
+                            Message msg = Message.obtain();
+                            msg.what = DefaultValue.MESSAGE_TRANSFER_STATUS;
+                            msg.arg1 = server ? 0 : 1;
+                            msg.arg2 = status;
+                            msg.obj = file;
+                            mHandler.sendMessage(msg);
+                        }
+                    });
+                    task.start();
+                    */
+
+                    break;
+
                 case DefaultValue.MESSAGE_TRANSFER_STATUS:
                     boolean server = (msg.arg1 == 0);
                     int status = msg.arg2;
@@ -262,20 +311,25 @@ public class TransferActivity extends AppCompatActivity implements View.OnClickL
                     Log.e(DefaultValue.TAG, "server=" + server + ",status=" + status + ",path=" + path);
 
                     String message = getResources().getString(server ? R.string.transfer_server : R.string.transfer_client);
-                    if(status == DefaultValue.TRANSFER_START) {
-                        if(server)
+                    if (status == DefaultValue.TRANSFER_START) {
+                        if (server)
                             message += getResources().getString(R.string.transfer_server_start, Uri.parse(path).getPath());
                         else
                             message += getResources().getString(R.string.transfer_client_start);
-                    } else if(status == DefaultValue.TRANSFER_END) {
-                        if(server)
+                    } else if (status == DefaultValue.TRANSFER_END) {
+                        if (server)
                             message += getResources().getString(R.string.transfer_server_end);
                         else
                             message += getResources().getString(R.string.transfer_client_end, path);
-                    } else if(status == DefaultValue.TRANSFER_ERROR) {
+                    } else if (status == DefaultValue.TRANSFER_ERROR) {
                         String error = (String) msg.obj;
                     }
-                    sendMessage(message);
+                    Messenger.sendMessage(message);
+                    break;
+
+                case DefaultValue.MESSAGE_LOG:
+                    mLog.setText((String) msg.obj);
+                    mScroll.scrollTo(0, mLog.getMeasuredHeight());
                     break;
 
                 //case DefaultValue.MESSAGE_CANCEL_CONNECT:
@@ -354,6 +408,7 @@ public class TransferActivity extends AppCompatActivity implements View.OnClickL
         mWifiP2pController.requestConnect(networkInfo);
     }
 
+    /*
     @Override
     public void sendMessage(int resId, Object... args) {
         mWifiP2pController.sendMessage(resId, args);
@@ -370,6 +425,7 @@ public class TransferActivity extends AppCompatActivity implements View.OnClickL
     public void clearMessage() {
         mWifiP2pController.clearMessage();
     }
+    */
 
     //public void setPath(Uri paht) {
     //    mWifiP2pController.setPath(paht);

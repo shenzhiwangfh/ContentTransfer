@@ -22,7 +22,9 @@ public interface WifiP2pInterface {
     void connect(WifiP2pDevice device);
     void requestConnect(NetworkInfo networkInfo);
 
+    /*
     void sendMessage(int resId, Object... args);
     void sendMessage(String msg, Object... args);
     void clearMessage();
+    */
 }

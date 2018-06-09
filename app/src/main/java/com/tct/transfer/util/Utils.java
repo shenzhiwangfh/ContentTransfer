@@ -1,5 +1,9 @@
 package com.tct.transfer.util;
 
+import android.util.Log;
+
+import com.tct.transfer.DefaultValue;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -58,19 +62,21 @@ public class Utils {
             objectOutputStream.writeObject(obj);
             objectOutputStream.flush();
             bytes = byteArrayOutputStream.toByteArray();
-
         } catch (IOException e) {
+            Log.e(DefaultValue.TAG, "objectToByteArray,e1=" + e.toString());
         } finally {
             if (objectOutputStream != null) {
                 try {
                     objectOutputStream.close();
                 } catch (IOException e) {
+                    Log.e(DefaultValue.TAG, "objectToByteArray,e2=" + e.toString());
                 }
             }
             if (byteArrayOutputStream != null) {
                 try {
                     byteArrayOutputStream.close();
                 } catch (IOException e) {
+                    Log.e(DefaultValue.TAG, "objectToByteArray,e3=" + e.toString());
                 }
             }
 

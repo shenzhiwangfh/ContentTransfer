@@ -14,14 +14,16 @@ public class DefaultValue {
     public final static int MESSAGE_WIFI_STATUS_CHANGED = 1;
     public final static int MESSAGE_WIFI_DISCOVER = 2;
     public final static int MESSAGE_REGISTER = 3;
-    public final static int MESSAGE_TRANSFER_STATUS = 4;
+    public final static int MESSAGE_TRANSFER_START = 4;
+    public final static int MESSAGE_TRANSFER_STATUS = 5;
+    public final static int MESSAGE_LOG = 100;
 
     public final static int PORT_HEART_BEAT = 52870;
-    public final static int PORT_TRANSFER = 52871;
+    public final static int PORT_TRANSFER = 52872;
     public final static int SOCKET_CONNECT_TIMEOUT = 5000;
 
     public static String recvPath() {
-        return Environment.getExternalStorageDirectory() + "/" + "TctRecvPicture" + "/p2p-" + System.currentTimeMillis() + ".jpg";
+        return Environment.getExternalStorageDirectory() + "/" + "TctRecvPicture";
     }
 
     public final static int TRANSFER_START = 0;
