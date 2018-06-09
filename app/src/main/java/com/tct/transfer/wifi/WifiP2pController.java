@@ -84,10 +84,6 @@ public class WifiP2pController {
         mPath = path;
     }
 
-    //public String getPath() {
-    //    return (mPath == null) ? null : mPath.toString();
-    //}
-
     public void connect(WifiP2pDevice device) {
         if (device.status == WifiP2pDevice.CONNECTED) {
             //showDialog(DIALOG_DISCONNECT);
