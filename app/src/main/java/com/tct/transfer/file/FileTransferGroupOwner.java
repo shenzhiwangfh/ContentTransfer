@@ -9,6 +9,7 @@ import java.net.Socket;
 
 import com.tct.transfer.log.LogUtils;
 import com.tct.transfer.log.Messenger;
+import com.tct.transfer.util.FileUtil;
 import com.tct.transfer.wifi.WifiP2pDeviceInfo;
 
 public class FileTransferGroupOwner extends Thread {

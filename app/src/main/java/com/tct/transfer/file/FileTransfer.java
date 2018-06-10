@@ -1,19 +1,17 @@
 package com.tct.transfer.file;
 
-import android.net.Uri;
-import android.util.Log;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.file.FileStore;
 
 import com.tct.transfer.DefaultValue;
 import com.tct.transfer.log.LogUtils;
 import com.tct.transfer.log.Messenger;
+import com.tct.transfer.util.FileSizeUtil;
+import com.tct.transfer.util.FileUtil;
 import com.tct.transfer.util.Utils;
 
 public class FileTransfer {

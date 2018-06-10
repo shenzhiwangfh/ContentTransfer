@@ -32,7 +32,8 @@ import com.tct.libzxing.zxing.encoding.EncodingUtils;
 import com.tct.transfer.file.FileBean;
 import com.tct.transfer.file.FileTransferGroupClient;
 import com.tct.transfer.file.FileTransferGroupOwner;
-import com.tct.transfer.file.FileUtil;
+import com.tct.transfer.util.FileSizeUtil;
+import com.tct.transfer.util.FileUtil;
 import com.tct.transfer.file.TransferStatus;
 import com.tct.transfer.heart.HeartBeatTask;
 import com.tct.transfer.log.LogUtils;
@@ -46,6 +47,8 @@ import com.tct.transfer.wifi.WifiP2pDeviceInfo;
 import com.tct.transfer.wifi.WifiP2pInterface;
 import com.tct.transfer.log.Messenger;
 
+import java.text.DecimalFormat;
+
 public class TransferActivity extends AppCompatActivity implements
         View.OnClickListener,
         WifiP2pInterface,
@@ -54,12 +57,14 @@ public class TransferActivity extends AppCompatActivity implements
     private final static String TAG = "TransferActivity";
 
     private Context mContext;
+    private DecimalFormat df;
 
     private Button mShare;
     //private TextView mFileName;
     private Button mAccept;
     private ImageView mStatus;
     private ImageView mQRCode;
+    private TextView mTransferText;
 
     private ScrollView mScroll;
     private TextView mLog;
@@ -80,7 +85,10 @@ public class TransferActivity extends AppCompatActivity implements
     private TransferStatus mTransferStatus = new TransferStatus() {
         @Override
         public void sendStatus(FileBean bean) {
-
+            String percent = df.format((float)bean.transferSize / (float) bean.size);
+            String transferSize = FileSizeUtil.FormetFileSize(bean.transferSize) + " / " + FileSizeUtil.FormetFileSize(bean.size);
+            String showText = percent + "  " + transferSize;
+            mTransferText.setText(showText);
         }
     };
 
@@ -91,6 +99,9 @@ public class TransferActivity extends AppCompatActivity implements
 
         mContext = this;
 
+        df = new DecimalFormat("0%");
+        df.setMaximumFractionDigits(2);
+
         mPermissionHelper = new PermissionHelper(this, this);
         mPermissionHelper.requestPermissions();
 
@@ -98,6 +109,7 @@ public class TransferActivity extends AppCompatActivity implements
         mAccept = findViewById(R.id.accept_file);
         mStatus = findViewById(R.id.status);
         mQRCode = findViewById(R.id.qr_big_code);
+        mTransferText = findViewById(R.id.transfer_status);
 
         mScroll = findViewById(R.id.log_scrollview);
         mLog = findViewById(R.id.log);
@@ -164,11 +176,11 @@ public class TransferActivity extends AppCompatActivity implements
                 Messenger.clearMessage();
 
                 Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-                intent.setType("image/*"); //选择图片
+                //intent.setType("image/*"); //选择图片
                 //intent.setType("audio/*"); //选择音频
                 //intent.setType("video/*"); //选择视频 （mp4/3gp 是android支持的视频格式）
                 //intent.setType("video/*;image/*"); //同时选择视频和图片
-                //intent.setType("*/*"); //无类型限制
+                intent.setType("*/*"); //无类型限制
                 intent.addCategory(Intent.CATEGORY_OPENABLE);
                 startActivityForResult(intent, DefaultValue.REQUEST_CODE_QUERY_FILE);
             }

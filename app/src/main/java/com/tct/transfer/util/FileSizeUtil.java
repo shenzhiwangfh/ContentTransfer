@@ -1,4 +1,4 @@
-package com.tct.transfer.file;
+package com.tct.transfer.util;
 
 import com.tct.transfer.log.LogUtils;
 
@@ -105,7 +105,7 @@ public class FileSizeUtil {
      * @param fileS
      * @return
      */
-    private static String FormetFileSize(long fileS) {
+    public static String FormetFileSize(long fileS) {
         DecimalFormat df = new DecimalFormat("#.00");
         String fileSizeString = "";
         String wrongSize = "0B";
