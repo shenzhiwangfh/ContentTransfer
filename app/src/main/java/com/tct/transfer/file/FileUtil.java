@@ -8,6 +8,8 @@ import android.os.Environment;
 import android.provider.DocumentsContract;
 import android.provider.MediaStore;
 
+import com.tct.transfer.log.LogUtils;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -107,18 +109,31 @@ public class FileUtil {
         return "com.android.providers.media.documents".equals(uri.getAuthority());
     }
 
-    public static boolean copyFile(InputStream in, OutputStream out) {
+    public static boolean copyFile(InputStream in, OutputStream out, FileBean bean, TransferStatus listener) {
         byte buf[] = new byte[1024];
         int len;
+
+        bean.transferSize = 0;
         try {
             while ((len = in.read(buf)) != -1) {
                 out.write(buf, 0, len);
+                bean.transferSize += len;
+
+                LogUtils.e("test", "bean.transferSize=" + bean.transferSize + "," + bean.size);
+
+                if (listener != null) listener.sendStatus(bean);
+
+                if(bean.transferSize == bean.size) {
+                    break;
+                }
             }
-            out.close();
-            in.close();
+            //out.close();
+            //in.close();
         } catch (IOException e) {
             return false;
         }
+
+        LogUtils.e("test", "true");
         return true;
     }
 

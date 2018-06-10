@@ -10,11 +10,12 @@ public class FileBean implements Serializable {
     public String name;
     public String md5;
     public long size;
+    public long transferSize;
     public int action; //0:upload, 1:download
     public long time;
     public int elapsed;
     public int type; //0:picture, 1:video, 2:text, 3:other
-    public int status; //0:start, 1:ing, 3:end
+    public int result; //0:succeed, 1:failed,
 
     public String toString() {
         StringBuilder sb = new StringBuilder()

@@ -7,7 +7,6 @@ import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-import com.tct.transfer.DefaultValue;
 import com.tct.transfer.log.LogUtils;
 import com.tct.transfer.log.Messenger;
 import com.tct.transfer.wifi.WifiP2pDeviceInfo;
@@ -20,22 +19,14 @@ public class FileTransferGroupOwner extends Thread {
     private int port;
     private WifiP2pDeviceInfo myDevice;
     private FileBean bean;
+    private TransferStatus listener;
 
-    public FileTransferGroupOwner(Context context, int port, WifiP2pDeviceInfo myDevice, FileBean bean) {
+    public FileTransferGroupOwner(Context context, int port, WifiP2pDeviceInfo myDevice, FileBean bean, TransferStatus listener) {
         this.context = context;
         this.port = port;
         this.myDevice = myDevice;
         this.bean = bean;
-    }
-
-    public interface TransferStatue {
-        void sendStatue(int status);
-    }
-
-    private TransferStatue mTransferStatue;
-
-    public void setTransferStatue(TransferStatue transferStatue) {
-        mTransferStatue = transferStatue;
+        this.listener = listener;
     }
 
     @Override
@@ -44,8 +35,8 @@ public class FileTransferGroupOwner extends Thread {
             ServerSocket serverSocket = new ServerSocket(port);
             Socket client = serverSocket.accept();
 
-            if (mTransferStatue != null)
-                mTransferStatue.sendStatue(DefaultValue.TRANSFER_START);
+            //if (listener != null)
+            //    listener.sendStatus(DefaultValue.TRANSFER_START, bean);
 
             LogUtils.e(TAG, "FileTransferGroupOwner,begin,port=" + port);
             //bean.md5 = FileUtil.getFileMD5(new File(bean.path));
@@ -54,24 +45,25 @@ public class FileTransferGroupOwner extends Thread {
             OutputStream out = client.getOutputStream();
             if(myDevice.isServer()) {
                 Messenger.sendMessage("owner,server,send");
-                FileTransfer.sendFile(in, out, bean);
+                FileTransfer.sendFile(in, out, bean, listener);
             } else {
                 Messenger.sendMessage("owner,client,recv");
-                FileTransfer.recvFile(in, out, bean);
+                FileTransfer.recvFile(in, out, bean, listener);
             }
             
             Messenger.sendMessage("FileTransferGroupOwner, end transfer");
             LogUtils.e(TAG, "FileTransferGroupOwner,end transfer");
-            if (mTransferStatue != null)
-                mTransferStatue.sendStatue(DefaultValue.TRANSFER_END);
+            //if (listener != null)
+            //    listener.sendStatus(DefaultValue.TRANSFER_END, bean);
 
+            in.close();
             out.close();
             client.close();
             serverSocket.close();
         } catch (IOException e) {
             LogUtils.e(TAG, "FileTransferGroupOwner,transfer error=" + e);
-            if (mTransferStatue != null)
-                mTransferStatue.sendStatue(DefaultValue.TRANSFER_ERROR);
+            //if (listener != null)
+            //    listener.sendStatus(DefaultValue.TRANSFER_ERROR, bean);
         }
     }
 

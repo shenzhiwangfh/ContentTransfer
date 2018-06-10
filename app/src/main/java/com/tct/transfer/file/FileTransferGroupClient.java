@@ -17,27 +17,17 @@ public class FileTransferGroupClient extends Thread {
     private final static String TAG = "FileTransferGroupClient";
 
     private Context context;
-    //private String ip;
     private int port;
     private WifiP2pDeviceInfo myDevice;
     private FileBean bean;
+    private TransferStatus listener;
 
-    public FileTransferGroupClient(Context context, /*String ip,*/ int port, WifiP2pDeviceInfo myDevice, FileBean bean) {
+    public FileTransferGroupClient(Context context, int port, WifiP2pDeviceInfo myDevice, FileBean bean, TransferStatus listener) {
         this.context = context;
-        //this.ip = ip;
         this.port = port;
         this.myDevice = myDevice;
         this.bean = bean;
-    }
-
-    public interface TransferStatue {
-        void sendStatue(int status, String file);
-    }
-
-    private TransferStatue mTransferStatue;
-
-    public void setTransferStatue(TransferStatue transferStatue) {
-        mTransferStatue = transferStatue;
+        this.listener = listener;
     }
 
     @Override
@@ -48,24 +38,26 @@ public class FileTransferGroupClient extends Thread {
             socket.bind(null);
             socket.connect((new InetSocketAddress(myDevice.getPeerIp(), port)), /*DefaultValue.SOCKET_CONNECT_TIMEOUT*/60000);
 
-            if (mTransferStatue != null)
-                mTransferStatue.sendStatue(DefaultValue.TRANSFER_START, bean.name);
+            //if (listener != null)
+            //    listener.sendStatus(DefaultValue.TRANSFER_START, bean);
 
             InputStream in = socket.getInputStream();
             OutputStream out = socket.getOutputStream();
             if(myDevice.isServer()) {
                 Messenger.sendMessage("client,server,send");
-                FileTransfer.sendFile(in, out, bean);
+                FileTransfer.sendFile(in, out, bean, listener);
             } else {
                 Messenger.sendMessage("client,client,recv");
-                FileTransfer.recvFile(in, out, bean);
+                FileTransfer.recvFile(in, out, bean, listener);
             }
 
             Messenger.sendMessage("FileTransferGroupClient,end transfer");
             LogUtils.e(TAG, "FileTransferGroupClient,end transfer");
-            if (mTransferStatue != null)
-                mTransferStatue.sendStatue(DefaultValue.TRANSFER_END, bean.path);
+            //if (listener != null)
+            //    listener.sendStatus(DefaultValue.TRANSFER_END, bean);
 
+            in.close();
+            out.close();
             socket.close();
         } catch (IOException e) {
             LogUtils.e(TAG, "FileTransferGroupClient,e=" + e.toString());

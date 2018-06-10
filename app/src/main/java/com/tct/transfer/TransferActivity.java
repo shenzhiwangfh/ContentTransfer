@@ -33,6 +33,7 @@ import com.tct.transfer.file.FileBean;
 import com.tct.transfer.file.FileTransferGroupClient;
 import com.tct.transfer.file.FileTransferGroupOwner;
 import com.tct.transfer.file.FileUtil;
+import com.tct.transfer.file.TransferStatus;
 import com.tct.transfer.heart.HeartBeatTask;
 import com.tct.transfer.log.LogUtils;
 import com.tct.transfer.permission.PermissionHelper;
@@ -45,7 +46,10 @@ import com.tct.transfer.wifi.WifiP2pDeviceInfo;
 import com.tct.transfer.wifi.WifiP2pInterface;
 import com.tct.transfer.log.Messenger;
 
-public class TransferActivity extends AppCompatActivity implements View.OnClickListener, WifiP2pInterface, PermissionInterface {
+public class TransferActivity extends AppCompatActivity implements
+        View.OnClickListener,
+        WifiP2pInterface,
+        PermissionInterface {
 
     private final static String TAG = "TransferActivity";
 
@@ -64,16 +68,21 @@ public class TransferActivity extends AppCompatActivity implements View.OnClickL
     private WifiP2pManager mManager;
     private WifiP2pManager.Channel mChannel;
 
-    //private WifiP2pController mWifiP2pController;
     private PermissionHelper mPermissionHelper;
 
-    //private boolean mServer = false;
     private int mWifiState = WifiP2pManager.WIFI_P2P_STATE_DISABLED;
     private boolean mLooper = false;
 
     private WifiP2pDeviceInfo mCustomDevice = null;
     private WifiP2pDeviceInfo mMyDevice = new WifiP2pDeviceInfo();
     private FileBean mBean = new FileBean();
+
+    private TransferStatus mTransferStatus = new TransferStatus() {
+        @Override
+        public void sendStatus(FileBean bean) {
+
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -179,7 +188,6 @@ public class TransferActivity extends AppCompatActivity implements View.OnClickL
                 mLooper = true;
                 mQRCode.setVisibility(mLooper ? View.VISIBLE : View.INVISIBLE);
 
-
                 WifiP2pQueueManager queueManager = new WifiP2pQueueManager(mManager, mChannel, new WifiP2pQueueManager.OnFinishListener() {
                     @Override
                     public void onFinish() {
@@ -214,6 +222,9 @@ public class TransferActivity extends AppCompatActivity implements View.OnClickL
                 Bundle bundle = data.getExtras();
                 if (bundle != null) {
                     String scanResult = bundle.getString("result");
+
+                    LogUtils.e(TAG, "result="+scanResult);
+
                     setCustomDevice(WifiP2pDeviceInfo.analysis(scanResult));
                     //setServer(true);
                     mMyDevice.setServer(true);
@@ -273,13 +284,9 @@ public class TransferActivity extends AppCompatActivity implements View.OnClickL
             int what = msg.what;
             switch (what) {
                 case DefaultValue.MESSAGE_REGISTER:
-                    LogUtils.e(TAG, "handler,MESSAGE_REGISTER");
-
                     registerReceiver();
                     break;
                 case DefaultValue.MESSAGE_WIFI_STATUS_CHANGED:
-                    LogUtils.e(TAG, "handler,MESSAGE_WIFI_STATUS_CHANGED");
-
                     if (isWifiOpened()) {
                         mStatus.setBackgroundColor(Color.GREEN);
                         mShare.setEnabled(true);
@@ -314,22 +321,20 @@ public class TransferActivity extends AppCompatActivity implements View.OnClickL
                     }
                     break;
                 case DefaultValue.MESSAGE_TRANSFER_START:
-
                     if (mMyDevice.isOwner()) {
-                        FileTransferGroupOwner task = new FileTransferGroupOwner(mContext, DefaultValue.PORT_TRANSFER, mMyDevice, mBean);
+                        FileTransferGroupOwner task =
+                                new FileTransferGroupOwner(mContext, DefaultValue.PORT_TRANSFER, mMyDevice, mBean, mTransferStatus);
                         task.start();
                     } else {
-                        FileTransferGroupClient task = new FileTransferGroupClient(mContext, DefaultValue.PORT_TRANSFER, mMyDevice, mBean);
+                        FileTransferGroupClient task =
+                                new FileTransferGroupClient(mContext, DefaultValue.PORT_TRANSFER, mMyDevice, mBean, mTransferStatus);
                         task.start();
                     }
-
                     break;
                 case DefaultValue.MESSAGE_TRANSFER_STATUS:
                     boolean server = (msg.arg1 == 0);
                     int status = msg.arg2;
                     String path = (String) msg.obj;
-
-                    LogUtils.e(TAG, "server=" + server + ",status=" + status + ",path=" + path);
 
                     String message = getResources().getString(server ? R.string.transfer_server : R.string.transfer_client);
                     if (status == DefaultValue.TRANSFER_START) {
@@ -370,65 +375,33 @@ public class TransferActivity extends AppCompatActivity implements View.OnClickL
 
     @Override
     public void setMyDevice(String name, String mac) {
-        //mWifiP2pController.setMyDevice(myDevice);
         mMyDevice.setName(name);
         mMyDevice.setMac(mac);
     }
 
     //@Override
     public WifiP2pDeviceInfo getMyDevice() {
-        return mMyDevice;//mWifiP2pController.getMyDevice();
+        return mMyDevice;
     }
 
     @Override
     public void setCustomDevice(WifiP2pDeviceInfo customDevice) {
-        //mWifiP2pController.setCustomDevice(customDevice);
         mCustomDevice = customDevice;
     }
 
     @Override
     public WifiP2pDeviceInfo getCustomDevice() {
-        return mCustomDevice;//mWifiP2pController.getCustomDevice();
+        return mCustomDevice;
     }
-
-    /*
-    @Override
-    public void setServer(boolean server) {
-        //mWifiP2pController.setServer(server);
-        mServer = server;
-        mHandler.sendEmptyMessage(DefaultValue.MESSAGE_WIFI_STATUS_CHANGED);
-    }
-
-    @Override
-    public boolean isServer() {
-        //return mWifiP2pController.isServer();
-        return mServer;
-    }
-    */
-
-    //@Override
-    //public void setLooper(boolean looper) {
-    //    //mWifiP2pController.setLooper(looper);
-    //    mLooper = looper;
-    //    mQRCode.setVisibility(looper ? View.VISIBLE : View.INVISIBLE);
-    //}
-
-    //@Override
-    //public boolean canLooper() {
-    //    return mLooper;
-    //return mWifiP2pController.canLooper();
-    //}
 
     @Override
     public void setWifiState(int state) {
-        //mWifiP2pController.setWifiState(state);
         mWifiState = state;
         mHandler.sendEmptyMessage(DefaultValue.MESSAGE_WIFI_STATUS_CHANGED);
     }
 
     @Override
     public boolean isWifiOpened() {
-        //return mWifiP2pController.isWifiOpened();
         return (mWifiState == WifiP2pManager.WIFI_P2P_STATE_ENABLED);
     }
 
@@ -457,7 +430,6 @@ public class TransferActivity extends AppCompatActivity implements View.OnClickL
 
     @Override
     public void requestConnect(NetworkInfo networkInfo) {
-        //mWifiP2pController.requestConnect(networkInfo);
         mLooper = false;
 
         if (networkInfo.isConnected()) {
