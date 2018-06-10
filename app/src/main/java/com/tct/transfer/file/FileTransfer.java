@@ -7,7 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import com.tct.transfer.DefaultValue;
+import com.tct.transfer.util.DefaultValue;
 import com.tct.transfer.log.LogUtils;
 import com.tct.transfer.log.Messenger;
 import com.tct.transfer.util.FileSizeUtil;
@@ -21,6 +21,13 @@ public class FileTransfer {
     public static void recvFile(InputStream in, OutputStream out, FileBean bean, TransferStatus listener) {
 
         try {
+            bean.action = 1; //download
+            bean.status = 0; //start
+            bean.time = System.currentTimeMillis();
+            if(listener != null) listener.sendStatus(bean);
+
+            bean.status = 1; //ing
+
             //recv bean info
             byte len[] = new byte[4];
             in.read(len, 0, 4);
@@ -31,7 +38,6 @@ public class FileTransfer {
 
             bean.name = bean.path.substring(bean.path.lastIndexOf("/") + 1);
             bean.path = DefaultValue.recvPath() + "/" + bean.name;
-            bean.action = 1; //download
             LogUtils.e(TAG, "client,bean=" + bean.toString());
 
             //send ready ok
@@ -57,12 +63,14 @@ public class FileTransfer {
             } else {
                 bean.result = 1; //failed
             }
-            //listener.sendStatus(bean);
 
             //send result
             String result = (bean.result == 0) ? FileUtil.STATUS_OK : FileUtil.STATUS_ERROR;
             writeStatus(out, result);
             Messenger.sendMessage(result);
+
+            bean.status = 2; //end
+            if(listener != null) listener.sendStatus(bean);
         } catch (IOException e) {
 
         }
@@ -77,7 +85,11 @@ public class FileTransfer {
             bean.md5 = FileUtil.getFileMD5(sendFile);
             bean.size = (long) FileSizeUtil.getFileOrFilesSize(bean.path, FileSizeUtil.SIZETYPE_B);
             bean.action = 0; //upload
+            bean.status = 0; //start
             bean.time = System.currentTimeMillis();
+            if(listener != null) listener.sendStatus(bean);
+
+            bean.status = 1;
 
             byte beanBytes[] = Utils.objectToByteArray(bean);
             int bodyLen = beanBytes.length;
@@ -99,6 +111,9 @@ public class FileTransfer {
             String result = readStatus(in);
             bean.result = isOK(result) ? 0 : 1;
             Messenger.sendMessage(result);
+
+            bean.status = 2; //end
+            if(listener != null) listener.sendStatus(bean);
         } catch (IOException e) {
 
         }

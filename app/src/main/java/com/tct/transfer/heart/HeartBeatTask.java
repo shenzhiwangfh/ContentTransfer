@@ -1,9 +1,8 @@
 package com.tct.transfer.heart;
 
 
-import com.tct.transfer.DefaultValue;
+import com.tct.transfer.util.DefaultValue;
 import com.tct.transfer.log.LogUtils;
-import com.tct.transfer.log.Messenger;
 import com.tct.transfer.util.Utils;
 import com.tct.transfer.wifi.WifiP2pDeviceInfo;
 

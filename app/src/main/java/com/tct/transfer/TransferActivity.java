@@ -32,6 +32,7 @@ import com.tct.libzxing.zxing.encoding.EncodingUtils;
 import com.tct.transfer.file.FileBean;
 import com.tct.transfer.file.FileTransferGroupClient;
 import com.tct.transfer.file.FileTransferGroupOwner;
+import com.tct.transfer.util.DefaultValue;
 import com.tct.transfer.util.FileSizeUtil;
 import com.tct.transfer.util.FileUtil;
 import com.tct.transfer.file.TransferStatus;
@@ -42,6 +43,7 @@ import com.tct.transfer.permission.PermissionInterface;
 import com.tct.transfer.permission.PermissionUtil;
 import com.tct.transfer.queue.WifiP2pMessage;
 import com.tct.transfer.queue.WifiP2pQueueManager;
+import com.tct.transfer.util.Utils;
 import com.tct.transfer.wifi.WifiP2PReceiver;
 import com.tct.transfer.wifi.WifiP2pDeviceInfo;
 import com.tct.transfer.wifi.WifiP2pInterface;
@@ -64,6 +66,9 @@ public class TransferActivity extends AppCompatActivity implements
     private Button mAccept;
     private ImageView mStatus;
     private ImageView mQRCode;
+
+    private TextView mMyDeviceText;
+    private TextView mCustomDeviceText;
     private TextView mTransferText;
 
     private ScrollView mScroll;
@@ -80,17 +85,57 @@ public class TransferActivity extends AppCompatActivity implements
 
     private WifiP2pDeviceInfo mCustomDevice = null;
     private WifiP2pDeviceInfo mMyDevice = new WifiP2pDeviceInfo();
-    private FileBean mBean = new FileBean();
+    //private FileBean mBean;// = new FileBean();
+    private String mPath;
 
     private TransferStatus mTransferStatus = new TransferStatus() {
         @Override
         public void sendStatus(FileBean bean) {
-            String percent = df.format((float)bean.transferSize / (float) bean.size);
-            String transferSize = FileSizeUtil.FormetFileSize(bean.transferSize) + " / " + FileSizeUtil.FormetFileSize(bean.size);
-            String showText = percent + "  " + transferSize;
-            mTransferText.setText(showText);
+
+            if (bean.status == 0) {
+                //mBean = bean;
+                //mShowLoop = true;
+                //new Thread(mShowThread).start();
+            } else if(bean.status == 1) {
+                //mBean = bean;
+            } else if (bean.status == 2) {
+                //mBean = bean;
+                //mShowLoop = false;
+                //mTransferText.setText(getString(R.string.transfer_end, Utils.long2time(mBean.elapsed)));
+                Message msg = Message.obtain();
+                msg.what = DefaultValue.MESSAGE_TRANSFER_STATUS;
+                msg.obj = getString(R.string.transfer_end, Utils.long2time(bean.elapsed));
+                mHandler.sendMessage(msg);
+            }
         }
     };
+
+    /*
+    private boolean mShowLoop = false;
+    private Runnable mShowThread = new Runnable() {
+        @Override
+        public void run() {
+            while (mShowLoop) {
+                String percent = df.format((float) mBean.transferSize / (float) mBean.size);
+                String transferSize = FileSizeUtil.FormetFileSize(mBean.transferSize) + " / " + FileSizeUtil.FormetFileSize(mBean.size);
+                String showText = percent + "  " + transferSize + "  " + Utils.long2time(mBean.elapsed);
+                if (mShowLoop) {
+                    //mTransferText.setText(showText);
+                    Message msg = Message.obtain();
+                    msg.what = DefaultValue.MESSAGE_TRANSFER_STATUS;
+                    msg.obj = showText;
+                    mHandler.sendMessage(msg);
+                }
+
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    };
+    */
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -109,6 +154,9 @@ public class TransferActivity extends AppCompatActivity implements
         mAccept = findViewById(R.id.accept_file);
         mStatus = findViewById(R.id.status);
         mQRCode = findViewById(R.id.qr_big_code);
+
+        mMyDeviceText = findViewById(R.id.my_device);
+        mCustomDeviceText = findViewById(R.id.custom_device);
         mTransferText = findViewById(R.id.transfer_status);
 
         mScroll = findViewById(R.id.log_scrollview);
@@ -221,8 +269,8 @@ public class TransferActivity extends AppCompatActivity implements
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (resultCode == Activity.RESULT_OK) {
             if (requestCode == DefaultValue.REQUEST_CODE_QUERY_FILE) {
-                mBean.path = FileUtil.getPath(mContext, data.getData());
-                //mWifiP2pController.setPath(mBean.path);
+                //mBean.path = FileUtil.getPath(mContext, data.getData());
+                mPath = FileUtil.getPath(mContext, data.getData());
 
                 if (PermissionUtil.hasPermission(this, Manifest.permission.CAMERA)) {
                     Intent intent = new Intent(TransferActivity.this, CaptureActivity.class);
@@ -234,15 +282,12 @@ public class TransferActivity extends AppCompatActivity implements
                 Bundle bundle = data.getExtras();
                 if (bundle != null) {
                     String scanResult = bundle.getString("result");
-
-                    LogUtils.e(TAG, "result="+scanResult);
-
                     setCustomDevice(WifiP2pDeviceInfo.analysis(scanResult));
                     //setServer(true);
                     mMyDevice.setServer(true);
 
                     mLooper = true;
-                    mQRCode.setVisibility(mLooper ? View.VISIBLE : View.INVISIBLE);
+                    mQRCode.setVisibility(View.VISIBLE);
 
                     WifiP2pQueueManager queueManager = new WifiP2pQueueManager(mManager, mChannel, new WifiP2pQueueManager.OnFinishListener() {
                         @Override
@@ -335,36 +380,18 @@ public class TransferActivity extends AppCompatActivity implements
                 case DefaultValue.MESSAGE_TRANSFER_START:
                     if (mMyDevice.isOwner()) {
                         FileTransferGroupOwner task =
-                                new FileTransferGroupOwner(mContext, DefaultValue.PORT_TRANSFER, mMyDevice, mBean, mTransferStatus);
+                                new FileTransferGroupOwner(mContext, DefaultValue.PORT_TRANSFER, mMyDevice, mPath, mTransferStatus);
                         task.start();
                     } else {
                         FileTransferGroupClient task =
-                                new FileTransferGroupClient(mContext, DefaultValue.PORT_TRANSFER, mMyDevice, mBean, mTransferStatus);
+                                new FileTransferGroupClient(mContext, DefaultValue.PORT_TRANSFER, mMyDevice, mPath, mTransferStatus);
                         task.start();
                     }
                     break;
                 case DefaultValue.MESSAGE_TRANSFER_STATUS:
-                    boolean server = (msg.arg1 == 0);
-                    int status = msg.arg2;
-                    String path = (String) msg.obj;
-
-                    String message = getResources().getString(server ? R.string.transfer_server : R.string.transfer_client);
-                    if (status == DefaultValue.TRANSFER_START) {
-                        if (server)
-                            message += getResources().getString(R.string.transfer_server_start, Uri.parse(path).getPath());
-                        else
-                            message += getResources().getString(R.string.transfer_client_start);
-                    } else if (status == DefaultValue.TRANSFER_END) {
-                        if (server)
-                            message += getResources().getString(R.string.transfer_server_end);
-                        else
-                            message += getResources().getString(R.string.transfer_client_end, path);
-                    } else if (status == DefaultValue.TRANSFER_ERROR) {
-                        String error = (String) msg.obj;
-                    }
-                    Messenger.sendMessage(message);
+                    String showText = (String) msg.obj;
+                    mTransferText.setText(showText);
                     break;
-
                 case DefaultValue.MESSAGE_LOG:
                     mLog.setText((String) msg.obj);
                     mScroll.scrollTo(0, mLog.getMeasuredHeight());
@@ -389,6 +416,7 @@ public class TransferActivity extends AppCompatActivity implements
     public void setMyDevice(String name, String mac) {
         mMyDevice.setName(name);
         mMyDevice.setMac(mac);
+        mMyDeviceText.setText(getString(R.string.my_device_name, name));
     }
 
     //@Override
@@ -399,6 +427,7 @@ public class TransferActivity extends AppCompatActivity implements
     @Override
     public void setCustomDevice(WifiP2pDeviceInfo customDevice) {
         mCustomDevice = customDevice;
+        mCustomDeviceText.setText(getString(R.string.custom_device_name, customDevice.getName()));
     }
 
     @Override
@@ -443,6 +472,7 @@ public class TransferActivity extends AppCompatActivity implements
     @Override
     public void requestConnect(NetworkInfo networkInfo) {
         mLooper = false;
+        mQRCode.setVisibility(View.INVISIBLE);
 
         if (networkInfo.isConnected()) {
             mManager.requestConnectionInfo(mChannel, new WifiP2pManager.ConnectionInfoListener() {
@@ -470,7 +500,8 @@ public class TransferActivity extends AppCompatActivity implements
                     task.setOnCustomDevice(new HeartBeatTask.OnSetCustomDevice() {
                         @Override
                         public void onSet(WifiP2pDeviceInfo device) {
-                            mCustomDevice = device;
+                            setCustomDevice(device);
+                            //mCustomDevice = device;
                             LogUtils.e(TAG, "mCustomDevice=" + mCustomDevice.toString());
                             //sendMessage("peer device:" + mCustomDevice.toString());
 

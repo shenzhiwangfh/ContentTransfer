@@ -7,9 +7,9 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 
-import com.tct.transfer.DefaultValue;
 import com.tct.transfer.log.LogUtils;
 import com.tct.transfer.log.Messenger;
+import com.tct.transfer.util.DefaultValue;
 import com.tct.transfer.wifi.WifiP2pDeviceInfo;
 
 public class FileTransferGroupClient extends Thread {
@@ -22,11 +22,12 @@ public class FileTransferGroupClient extends Thread {
     private FileBean bean;
     private TransferStatus listener;
 
-    public FileTransferGroupClient(Context context, int port, WifiP2pDeviceInfo myDevice, FileBean bean, TransferStatus listener) {
+    public FileTransferGroupClient(Context context, int port, WifiP2pDeviceInfo myDevice, String path, TransferStatus listener) {
         this.context = context;
         this.port = port;
         this.myDevice = myDevice;
-        this.bean = bean;
+        this.bean = new FileBean();
+        this.bean.path = path;
         this.listener = listener;
     }
 
@@ -34,12 +35,12 @@ public class FileTransferGroupClient extends Thread {
     public void run() {
         Socket socket = new Socket();
         try {
-            LogUtils.e(TAG, "FileTransferGroupClient,begin,(ip=" + myDevice.getPeerIp() + ",port=" + port + ")");
-            socket.bind(null);
-            socket.connect((new InetSocketAddress(myDevice.getPeerIp(), port)), /*DefaultValue.SOCKET_CONNECT_TIMEOUT*/60000);
-
+            Messenger.sendMessage("FileTransferGroupClient,begin,(ip=" + myDevice.getPeerIp() + ",port=" + port + ")");
             //if (listener != null)
             //    listener.sendStatus(DefaultValue.TRANSFER_START, bean);
+
+            socket.bind(null);
+            socket.connect((new InetSocketAddress(myDevice.getPeerIp(), port)), DefaultValue.SOCKET_CONNECT_TIMEOUT);
 
             InputStream in = socket.getInputStream();
             OutputStream out = socket.getOutputStream();
@@ -52,7 +53,6 @@ public class FileTransferGroupClient extends Thread {
             }
 
             Messenger.sendMessage("FileTransferGroupClient,end transfer");
-            LogUtils.e(TAG, "FileTransferGroupClient,end transfer");
             //if (listener != null)
             //    listener.sendStatus(DefaultValue.TRANSFER_END, bean);
 

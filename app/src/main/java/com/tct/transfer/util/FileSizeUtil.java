@@ -31,8 +31,7 @@ public class FileSizeUtil {
                 blockSize = getFileSize(file);
             }
         } catch (Exception e) {
-            e.printStackTrace();
-            LogUtils.e(TAG,"获取文件大小失败!");
+            LogUtils.e(TAG,"getFileOrFilesSize,e=" + e.toString());
         }
         return FormetFileSize(blockSize, sizeType);
     }
@@ -53,8 +52,7 @@ public class FileSizeUtil {
                 blockSize = getFileSize(file);
             }
         } catch (Exception e) {
-            e.printStackTrace();
-            LogUtils.e(TAG,"获取文件大小失败!");
+            LogUtils.e(TAG,"getAutoFileOrFilesSize,e=" + e.toString());
         }
         return FormetFileSize(blockSize);
     }

@@ -1,8 +1,6 @@
 package com.tct.transfer.util;
 
-import android.util.Log;
-
-import com.tct.transfer.DefaultValue;
+import com.tct.transfer.log.LogUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -126,5 +124,15 @@ public class Utils {
             countLength += b.length;
         }
         return allByte;
+    }
+
+    public static String long2time(long elapsed) {
+        int hour = (int) (elapsed / 1000 / 60 / 60);
+        int minute = (int)((elapsed / 1000 / 60) % 60);
+        int second = (int)((elapsed / 1000) % (60 * 60));
+
+        return String.format("%02d", hour) + ":" +
+                String.format("%02d", minute) + ":" +
+                String.format("%02d", second);
     }
 }

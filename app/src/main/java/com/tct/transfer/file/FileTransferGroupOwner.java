@@ -22,11 +22,12 @@ public class FileTransferGroupOwner extends Thread {
     private FileBean bean;
     private TransferStatus listener;
 
-    public FileTransferGroupOwner(Context context, int port, WifiP2pDeviceInfo myDevice, FileBean bean, TransferStatus listener) {
+    public FileTransferGroupOwner(Context context, int port, WifiP2pDeviceInfo myDevice, String path, TransferStatus listener) {
         this.context = context;
         this.port = port;
         this.myDevice = myDevice;
-        this.bean = bean;
+        this.bean = new FileBean();
+        this.bean.path = path;
         this.listener = listener;
     }
 
@@ -36,11 +37,9 @@ public class FileTransferGroupOwner extends Thread {
             ServerSocket serverSocket = new ServerSocket(port);
             Socket client = serverSocket.accept();
 
+            Messenger.sendMessage("FileTransferGroupOwner,begin,port=" + port);
             //if (listener != null)
             //    listener.sendStatus(DefaultValue.TRANSFER_START, bean);
-
-            LogUtils.e(TAG, "FileTransferGroupOwner,begin,port=" + port);
-            //bean.md5 = FileUtil.getFileMD5(new File(bean.path));
 
             InputStream in = client.getInputStream();
             OutputStream out = client.getOutputStream();
@@ -53,7 +52,6 @@ public class FileTransferGroupOwner extends Thread {
             }
             
             Messenger.sendMessage("FileTransferGroupOwner, end transfer");
-            LogUtils.e(TAG, "FileTransferGroupOwner,end transfer");
             //if (listener != null)
             //    listener.sendStatus(DefaultValue.TRANSFER_END, bean);
 

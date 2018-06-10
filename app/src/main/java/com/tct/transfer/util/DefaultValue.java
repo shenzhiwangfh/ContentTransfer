@@ -1,4 +1,4 @@
-package com.tct.transfer;
+package com.tct.transfer.util;
 
 import android.os.Environment;
 

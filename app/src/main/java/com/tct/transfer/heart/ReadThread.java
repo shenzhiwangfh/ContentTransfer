@@ -1,15 +1,10 @@
 package com.tct.transfer.heart;
 
-import android.util.Log;
-
-import com.tct.transfer.DefaultValue;
 import com.tct.transfer.util.Utils;
 import com.tct.transfer.wifi.WifiP2pDeviceInfo;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.net.Socket;
 
 public class ReadThread extends Thread {

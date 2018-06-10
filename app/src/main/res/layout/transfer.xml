@@ -52,24 +52,43 @@
         <ImageView
             android:id="@+id/qr_big_code"
             android:layout_width="120dp"
-            android:layout_height="120dp" />
+            android:layout_height="120dp"
+            android:visibility="invisible" />
 
-        <TextView
-            android:id="@+id/transfer_status"
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textColor="#ff00"/>
+            android:layout_height="120dp"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/my_device"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="#ff00" />
+
+            <TextView
+                android:id="@+id/custom_device"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="#ff00" />
+
+            <TextView
+                android:id="@+id/transfer_status"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="#ff00" />
+        </LinearLayout>
     </LinearLayout>
 
     <ScrollView
         android:id="@+id/log_scrollview"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"
         android:layout_marginTop="10dp"
-        android:paddingStart="10dp"
-        android:paddingEnd="10dp"
+        android:layout_weight="1"
         android:paddingBottom="10dp"
+        android:paddingEnd="10dp"
+        android:paddingStart="10dp"
         android:scrollbars="vertical">
 
         <TextView
@@ -77,6 +96,6 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:scrollbars="vertical"
-            android:textColor="#ff00"/>
+            android:textColor="#ff00" />
     </ScrollView>
 </LinearLayout>
