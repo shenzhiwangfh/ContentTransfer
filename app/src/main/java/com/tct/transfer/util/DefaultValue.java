@@ -16,6 +16,7 @@ public class DefaultValue {
     public final static int MESSAGE_REGISTER = 3;
     public final static int MESSAGE_TRANSFER_START = 4;
     public final static int MESSAGE_TRANSFER_STATUS = 5;
+    public final static int MESSAGE_SET_CUSTOM_DEVICE = 6;
     public final static int MESSAGE_LOG = 100;
 
     public final static int PORT_HEART_BEAT = 52870;

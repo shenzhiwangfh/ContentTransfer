@@ -17,6 +17,7 @@ import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.os.SystemClock;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 //import android.util.Log;
@@ -43,6 +44,7 @@ import com.tct.transfer.permission.PermissionInterface;
 import com.tct.transfer.permission.PermissionUtil;
 import com.tct.transfer.queue.WifiP2pMessage;
 import com.tct.transfer.queue.WifiP2pQueueManager;
+import com.tct.transfer.util.ThreadUtil;
 import com.tct.transfer.util.Utils;
 import com.tct.transfer.wifi.WifiP2PReceiver;
 import com.tct.transfer.wifi.WifiP2pDeviceInfo;
@@ -96,12 +98,34 @@ public class TransferActivity extends AppCompatActivity implements
                 //mBean = bean;
                 //mShowLoop = true;
                 //new Thread(mShowThread).start();
-            } else if(bean.status == 1) {
+                bean.time = System.currentTimeMillis();
+                Message msg = Message.obtain();
+                msg.what = DefaultValue.MESSAGE_TRANSFER_STATUS;
+                msg.obj = getString(R.string.transfer_start);
+                mHandler.sendMessage(msg);
+
+                ThreadUtil.start();
+            } else if (bean.status == 1) {
                 //mBean = bean;
+                if(ThreadUtil.isShow()) {
+                    bean.elapsed = System.currentTimeMillis() - bean.time;
+                    String percent = df.format((float) bean.transferSize / (float) bean.size);
+                    String transferSize = FileSizeUtil.FormetFileSize(bean.transferSize) + " / " + FileSizeUtil.FormetFileSize(bean.size);
+                    String showText = percent + "  " + transferSize + "  " + Utils.long2time(bean.elapsed);
+                    //mTransferText.setText(showText);
+                    Message msg = Message.obtain();
+                    msg.what = DefaultValue.MESSAGE_TRANSFER_STATUS;
+                    msg.obj = showText;
+                    mHandler.sendMessage(msg);
+
+                    ThreadUtil.reset();
+                }
             } else if (bean.status == 2) {
                 //mBean = bean;
                 //mShowLoop = false;
                 //mTransferText.setText(getString(R.string.transfer_end, Utils.long2time(mBean.elapsed)));
+                ThreadUtil.end();
+
                 Message msg = Message.obtain();
                 msg.what = DefaultValue.MESSAGE_TRANSFER_STATUS;
                 msg.obj = getString(R.string.transfer_end, Utils.long2time(bean.elapsed));
@@ -109,33 +133,6 @@ public class TransferActivity extends AppCompatActivity implements
             }
         }
     };
-
-    /*
-    private boolean mShowLoop = false;
-    private Runnable mShowThread = new Runnable() {
-        @Override
-        public void run() {
-            while (mShowLoop) {
-                String percent = df.format((float) mBean.transferSize / (float) mBean.size);
-                String transferSize = FileSizeUtil.FormetFileSize(mBean.transferSize) + " / " + FileSizeUtil.FormetFileSize(mBean.size);
-                String showText = percent + "  " + transferSize + "  " + Utils.long2time(mBean.elapsed);
-                if (mShowLoop) {
-                    //mTransferText.setText(showText);
-                    Message msg = Message.obtain();
-                    msg.what = DefaultValue.MESSAGE_TRANSFER_STATUS;
-                    msg.obj = showText;
-                    mHandler.sendMessage(msg);
-                }
-
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-    };
-    */
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -392,6 +389,11 @@ public class TransferActivity extends AppCompatActivity implements
                     String showText = (String) msg.obj;
                     mTransferText.setText(showText);
                     break;
+                case DefaultValue.MESSAGE_SET_CUSTOM_DEVICE:
+                    String device = (String) msg.obj;
+                    mCustomDeviceText.setText(device);
+                    break;
+
                 case DefaultValue.MESSAGE_LOG:
                     mLog.setText((String) msg.obj);
                     mScroll.scrollTo(0, mLog.getMeasuredHeight());
@@ -427,7 +429,12 @@ public class TransferActivity extends AppCompatActivity implements
     @Override
     public void setCustomDevice(WifiP2pDeviceInfo customDevice) {
         mCustomDevice = customDevice;
-        mCustomDeviceText.setText(getString(R.string.custom_device_name, customDevice.getName()));
+        //mCustomDeviceText.setText(getString(R.string.custom_device_name, customDevice.getName()));
+
+        Message msg = Message.obtain();
+        msg.what = DefaultValue.MESSAGE_SET_CUSTOM_DEVICE;
+        msg.obj = getString(R.string.custom_device_name, customDevice.getName());
+        mHandler.sendMessage(msg);
     }
 
     @Override

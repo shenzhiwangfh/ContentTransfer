@@ -57,7 +57,7 @@ public class FileTransferGroupOwner extends Thread {
 
             in.close();
             out.close();
-            client.close();
+            //client.close();
             serverSocket.close();
         } catch (IOException e) {
             LogUtils.e(TAG, "FileTransferGroupOwner,transfer error=" + e);
@@ -65,18 +65,4 @@ public class FileTransferGroupOwner extends Thread {
             //    listener.sendStatus(DefaultValue.TRANSFER_ERROR, bean);
         }
     }
-
-    private boolean isReady(String status) {
-        if (status == null || status.isEmpty())
-            return false;
-
-        if (status.equals(FileUtil.STATUS_OK)) {
-            return true;
-        } else if (status.equals(FileUtil.STATUS_ERROR)) {
-            return false;
-        } else {
-            return false;
-        }
-    }
-
 }
