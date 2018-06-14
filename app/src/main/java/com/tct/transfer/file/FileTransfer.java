@@ -23,7 +23,7 @@ public class FileTransfer {
         try {
             bean.action = 1; //download
             bean.status = 0; //start
-            bean.time = System.currentTimeMillis();
+            //bean.time = System.currentTimeMillis();
             if(listener != null) listener.sendStatus(bean);
 
             bean.status = 1; //ing
@@ -67,7 +67,7 @@ public class FileTransfer {
             //send result
             String result = (bean.result == 0) ? FileUtil.STATUS_OK : FileUtil.STATUS_ERROR;
             writeStatus(out, result);
-            Messenger.sendMessage(result);
+            //Messenger.sendMessage(result);
 
             bean.status = 2; //end
             if(listener != null) listener.sendStatus(bean);
@@ -86,7 +86,7 @@ public class FileTransfer {
             bean.size = (long) FileSizeUtil.getFileOrFilesSize(bean.path, FileSizeUtil.SIZETYPE_B);
             bean.action = 0; //upload
             bean.status = 0; //start
-            bean.time = System.currentTimeMillis();
+            //bean.time = System.currentTimeMillis();
             if(listener != null) listener.sendStatus(bean);
 
             bean.status = 1;
@@ -110,7 +110,7 @@ public class FileTransfer {
 
             String result = readStatus(in);
             bean.result = isOK(result) ? 0 : 1;
-            Messenger.sendMessage(result);
+            //Messenger.sendMessage(result);
 
             bean.status = 2; //end
             if(listener != null) listener.sendStatus(bean);

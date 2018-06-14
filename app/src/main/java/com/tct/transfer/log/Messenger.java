@@ -33,14 +33,16 @@ public class Messenger {
     public static void sendMessage(int resId, Object... args) {
         if (!init) return;
 
-        sb.append(String.format(mContext.getResources().getString(resId), args)).append("\n");
+        clearMessage();
+        sb.append(String.format(mContext.getResources().getString(resId), args));//.append("\n");
         log();
     }
 
     public static void sendMessage(String msg, Object... args) {
         if (!init) return;
 
-        sb.append(String.format(msg, args)).append("\n");
+        clearMessage();
+        sb.append(String.format(msg, args));//.append("\n");
         log();
     }
 

@@ -1,6 +1,7 @@
 package com.tct.transfer.file;
 
 import android.content.Context;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -37,27 +38,30 @@ public class FileTransferGroupOwner extends Thread {
             ServerSocket serverSocket = new ServerSocket(port);
             Socket client = serverSocket.accept();
 
-            Messenger.sendMessage("FileTransferGroupOwner,begin,port=" + port);
+            //Messenger.sendMessage("FileTransferGroupOwner,begin,port=" + port);
             //if (listener != null)
             //    listener.sendStatus(DefaultValue.TRANSFER_START, bean);
 
             InputStream in = client.getInputStream();
             OutputStream out = client.getOutputStream();
-            if(myDevice.isServer()) {
-                Messenger.sendMessage("owner,server,send");
+            if (myDevice.isServer()) {
+                //Messenger.sendMessage("owner,server,send");
                 FileTransfer.sendFile(in, out, bean, listener);
             } else {
-                Messenger.sendMessage("owner,client,recv");
+                //Messenger.sendMessage("owner,client,recv");
                 FileTransfer.recvFile(in, out, bean, listener);
             }
-            
-            Messenger.sendMessage("FileTransferGroupOwner, end transfer");
+
+            //Messenger.sendMessage("FileTransferGroupOwner, end transfer");
             //if (listener != null)
             //    listener.sendStatus(DefaultValue.TRANSFER_END, bean);
 
+            byte end[] = {1};
+            out.write(end, 0, 1);
+
             in.close();
             out.close();
-            //client.close();
+            client.close();
             serverSocket.close();
         } catch (IOException e) {
             LogUtils.e(TAG, "FileTransferGroupOwner,transfer error=" + e);

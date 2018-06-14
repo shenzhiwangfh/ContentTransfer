@@ -7,8 +7,9 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.Typeface;
 import android.net.NetworkInfo;
-import android.net.Uri;
 import android.net.wifi.WpsInfo;
 import android.net.wifi.p2p.WifiP2pConfig;
 import android.net.wifi.p2p.WifiP2pDevice;
@@ -17,11 +18,10 @@ import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.os.SystemClock;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
-//import android.util.Log;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ScrollView;
@@ -46,6 +46,7 @@ import com.tct.transfer.queue.WifiP2pMessage;
 import com.tct.transfer.queue.WifiP2pQueueManager;
 import com.tct.transfer.util.ThreadUtil;
 import com.tct.transfer.util.Utils;
+import com.tct.transfer.view.CircleBarView;
 import com.tct.transfer.wifi.WifiP2PReceiver;
 import com.tct.transfer.wifi.WifiP2pDeviceInfo;
 import com.tct.transfer.wifi.WifiP2pInterface;
@@ -67,14 +68,16 @@ public class TransferActivity extends AppCompatActivity implements
     //private TextView mFileName;
     private Button mAccept;
     private ImageView mStatus;
-    private ImageView mQRCode;
 
+    private ViewGroup mDeviceBar;
     private TextView mMyDeviceText;
     private TextView mCustomDeviceText;
     private TextView mTransferText;
+    private CircleBarView mTransferBar;
+    private ImageView mQRCode;
 
-    private ScrollView mScroll;
-    private TextView mLog;
+    //private ScrollView mScroll;
+    //private TextView mLog;
 
     private WifiP2PReceiver mReceiver;
     private WifiP2pManager mManager;
@@ -93,46 +96,64 @@ public class TransferActivity extends AppCompatActivity implements
     private TransferStatus mTransferStatus = new TransferStatus() {
         @Override
         public void sendStatus(FileBean bean) {
-
             if (bean.status == 0) {
-                //mBean = bean;
-                //mShowLoop = true;
-                //new Thread(mShowThread).start();
                 bean.time = System.currentTimeMillis();
-                Message msg = Message.obtain();
-                msg.what = DefaultValue.MESSAGE_TRANSFER_STATUS;
-                msg.obj = getString(R.string.transfer_start);
-                mHandler.sendMessage(msg);
-
-                ThreadUtil.start();
+                mThread = new TransferThread(true);
+                mThread.setBean(bean);
+                mThread.start();
             } else if (bean.status == 1) {
-                //mBean = bean;
-                if(ThreadUtil.isShow()) {
-                    bean.elapsed = System.currentTimeMillis() - bean.time;
-                    String percent = df.format((float) bean.transferSize / (float) bean.size);
-                    String transferSize = FileSizeUtil.FormetFileSize(bean.transferSize) + " / " + FileSizeUtil.FormetFileSize(bean.size);
-                    String showText = percent + "  " + transferSize + "  " + Utils.long2time(bean.elapsed);
-                    //mTransferText.setText(showText);
-                    Message msg = Message.obtain();
-                    msg.what = DefaultValue.MESSAGE_TRANSFER_STATUS;
-                    msg.obj = showText;
-                    mHandler.sendMessage(msg);
-
-                    ThreadUtil.reset();
-                }
+                mThread.setBean(bean);
             } else if (bean.status == 2) {
-                //mBean = bean;
-                //mShowLoop = false;
-                //mTransferText.setText(getString(R.string.transfer_end, Utils.long2time(mBean.elapsed)));
-                ThreadUtil.end();
-
-                Message msg = Message.obtain();
-                msg.what = DefaultValue.MESSAGE_TRANSFER_STATUS;
-                msg.obj = getString(R.string.transfer_end, Utils.long2time(bean.elapsed));
-                mHandler.sendMessage(msg);
+                mThread.setBean(bean);
+                mThread.setLoop(false);
             }
         }
     };
+
+    private TransferThread mThread;
+
+    private class TransferThread extends Thread {
+
+        private FileBean bean;
+        private boolean loop;
+
+        public TransferThread(boolean loop) {
+            this.loop = loop;
+        }
+
+        @Override
+        public void run() {
+            sendMessage();
+
+            while (loop) {
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+
+                }
+
+                if (loop) {
+                    sendMessage();
+                }
+            }
+            sendMessage();
+        }
+
+        private void sendMessage() {
+            Message msg = Message.obtain();
+            msg.what = DefaultValue.MESSAGE_TRANSFER_STATUS;
+            msg.obj = bean;//getString(R.string.transfer_start);
+            mHandler.sendMessage(msg);
+        }
+
+        public void setBean(FileBean bean) {
+            this.bean = bean;
+        }
+
+        public void setLoop(boolean loop) {
+            this.loop = loop;
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -141,8 +162,8 @@ public class TransferActivity extends AppCompatActivity implements
 
         mContext = this;
 
-        df = new DecimalFormat("0%");
-        df.setMaximumFractionDigits(2);
+        df = new DecimalFormat("00.0%");
+        df.setMaximumFractionDigits(1);
 
         mPermissionHelper = new PermissionHelper(this, this);
         mPermissionHelper.requestPermissions();
@@ -150,14 +171,23 @@ public class TransferActivity extends AppCompatActivity implements
         mShare = findViewById(R.id.share_file);
         mAccept = findViewById(R.id.accept_file);
         mStatus = findViewById(R.id.status);
-        mQRCode = findViewById(R.id.qr_big_code);
 
+        mQRCode = findViewById(R.id.qr_big_code);
         mMyDeviceText = findViewById(R.id.my_device);
         mCustomDeviceText = findViewById(R.id.custom_device);
         mTransferText = findViewById(R.id.transfer_status);
+        mDeviceBar = findViewById(R.id.device_bar);
+        mTransferBar = findViewById(R.id.transfer_bar);
 
-        mScroll = findViewById(R.id.log_scrollview);
-        mLog = findViewById(R.id.log);
+        Typeface typeface = null;
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            typeface = getResources().getFont(R.font.myfont);
+        }
+        if(typeface != null) mTransferText.setTypeface(typeface);
+        mTransferBar.setMaxNum(100);
+
+        //mScroll = findViewById(R.id.log_scrollview);
+        //mLog = findViewById(R.id.log);
         Messenger.init(mContext, mHandler, DefaultValue.MESSAGE_LOG);
 
         mShare.setOnClickListener(this);
@@ -243,7 +273,9 @@ public class TransferActivity extends AppCompatActivity implements
                 mQRCode.setImageBitmap(bmp);
 
                 mLooper = true;
-                mQRCode.setVisibility(mLooper ? View.VISIBLE : View.INVISIBLE);
+                mQRCode.setVisibility(View.VISIBLE);
+                mDeviceBar.setVisibility(View.INVISIBLE);
+                mTransferBar.setVisibility(View.INVISIBLE);
 
                 WifiP2pQueueManager queueManager = new WifiP2pQueueManager(mManager, mChannel, new WifiP2pQueueManager.OnFinishListener() {
                     @Override
@@ -284,7 +316,7 @@ public class TransferActivity extends AppCompatActivity implements
                     mMyDevice.setServer(true);
 
                     mLooper = true;
-                    mQRCode.setVisibility(View.VISIBLE);
+                    //mQRCode.setVisibility(View.VISIBLE);
 
                     WifiP2pQueueManager queueManager = new WifiP2pQueueManager(mManager, mChannel, new WifiP2pQueueManager.OnFinishListener() {
                         @Override
@@ -386,17 +418,30 @@ public class TransferActivity extends AppCompatActivity implements
                     }
                     break;
                 case DefaultValue.MESSAGE_TRANSFER_STATUS:
-                    String showText = (String) msg.obj;
-                    mTransferText.setText(showText);
+                    FileBean bean = (FileBean) msg.obj;
+
+                    String text;
+                    if (bean.status == 0) {
+                        mTransferText.setText(getString(R.string.transfer_start));
+                    } else if (bean.status == 2) {
+                        mTransferText.setText(getString(R.string.transfer_end));
+                    } else {
+                        float percent = (bean.transferSize) / (float) bean.size;
+                        String showText = df.format(percent);// + "\n" + transferSize + "\n" + Utils.long2time(bean.elapsed);
+                        mTransferBar.setProgressNum(percent, 0, showText);
+
+                        String transferSize = FileSizeUtil.FormetFileSize(bean.transferSize) + "/" + FileSizeUtil.FormetFileSize(bean.size);
+                        mTransferText.setText(transferSize);
+                    }
                     break;
                 case DefaultValue.MESSAGE_SET_CUSTOM_DEVICE:
                     String device = (String) msg.obj;
                     mCustomDeviceText.setText(device);
                     break;
-
                 case DefaultValue.MESSAGE_LOG:
-                    mLog.setText((String) msg.obj);
-                    mScroll.scrollTo(0, mLog.getMeasuredHeight());
+                    //mLog.setText((String) msg.obj);
+                    //mScroll.scrollTo(0, mLog.getMeasuredHeight());
+                    mTransferText.setText((String) msg.obj);
                     break;
 
                 //case DefaultValue.MESSAGE_CANCEL_CONNECT:
@@ -480,6 +525,8 @@ public class TransferActivity extends AppCompatActivity implements
     public void requestConnect(NetworkInfo networkInfo) {
         mLooper = false;
         mQRCode.setVisibility(View.INVISIBLE);
+        mDeviceBar.setVisibility(View.VISIBLE);
+        mTransferBar.setVisibility(View.VISIBLE);
 
         if (networkInfo.isConnected()) {
             mManager.requestConnectionInfo(mChannel, new WifiP2pManager.ConnectionInfoListener() {

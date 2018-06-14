@@ -35,7 +35,7 @@ public class FileTransferGroupClient extends Thread {
     public void run() {
         Socket socket = new Socket();
         try {
-            Messenger.sendMessage("FileTransferGroupClient,begin,(ip=" + myDevice.getPeerIp() + ",port=" + port + ")");
+            //Messenger.sendMessage("FileTransferGroupClient,begin,(ip=" + myDevice.getPeerIp() + ",port=" + port + ")");
             //if (listener != null)
             //    listener.sendStatus(DefaultValue.TRANSFER_START, bean);
 
@@ -45,16 +45,19 @@ public class FileTransferGroupClient extends Thread {
             InputStream in = socket.getInputStream();
             OutputStream out = socket.getOutputStream();
             if(myDevice.isServer()) {
-                Messenger.sendMessage("client,server,send");
+                //Messenger.sendMessage("client,server,send");
                 FileTransfer.sendFile(in, out, bean, listener);
             } else {
-                Messenger.sendMessage("client,client,recv");
+                //Messenger.sendMessage("client,client,recv");
                 FileTransfer.recvFile(in, out, bean, listener);
             }
 
-            Messenger.sendMessage("FileTransferGroupClient,end transfer");
+            //Messenger.sendMessage("FileTransferGroupClient,end transfer");
             //if (listener != null)
             //    listener.sendStatus(DefaultValue.TRANSFER_END, bean);
+
+            byte end[] = new byte[1];
+            in.read(end, 0, 1);
 
             in.close();
             out.close();

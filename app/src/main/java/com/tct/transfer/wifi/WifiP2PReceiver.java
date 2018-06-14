@@ -89,7 +89,7 @@ public class WifiP2PReceiver extends BroadcastReceiver {
             WifiP2pDevice thisDevice = intent.getParcelableExtra(WifiP2pManager.EXTRA_WIFI_P2P_DEVICE);
             LogUtils.e(TAG, "THIS_DEVICE/deviceName=" + thisDevice.deviceName + ",deviceAddress=" + thisDevice.deviceAddress);
             mWifiP2pInterface.setMyDevice(thisDevice.deviceName, thisDevice.deviceAddress);
-            Messenger.sendMessage(R.string.status_host, thisDevice.deviceName);
+            //Messenger.sendMessage(R.string.status_host, thisDevice.deviceName);
         }
     }
 }
