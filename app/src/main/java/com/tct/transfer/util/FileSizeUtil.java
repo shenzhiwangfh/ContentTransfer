@@ -7,7 +7,7 @@ import java.io.FileInputStream;
 import java.text.DecimalFormat;
 
 public class FileSizeUtil {
-    private static final String TAG=FileSizeUtil.class.getSimpleName();
+    private static final String TAG = FileSizeUtil.class.getSimpleName();
 
     public static final int SIZETYPE_B = 1;//获取文件大小单位为B的double值
     public static final int SIZETYPE_KB = 2;//获取文件大小单位为KB的double值
@@ -31,7 +31,7 @@ public class FileSizeUtil {
                 blockSize = getFileSize(file);
             }
         } catch (Exception e) {
-            LogUtils.e(TAG,"getFileOrFilesSize,e=" + e.toString());
+            LogUtils.e(TAG, "getFileOrFilesSize,e=" + e.toString());
         }
         return FormetFileSize(blockSize, sizeType);
     }
@@ -52,7 +52,7 @@ public class FileSizeUtil {
                 blockSize = getFileSize(file);
             }
         } catch (Exception e) {
-            LogUtils.e(TAG,"getAutoFileOrFilesSize,e=" + e.toString());
+            LogUtils.e(TAG, "getAutoFileOrFilesSize,e=" + e.toString());
         }
         return FormetFileSize(blockSize);
     }
@@ -72,7 +72,7 @@ public class FileSizeUtil {
             size = fis.available();
         } else {
             file.createNewFile();
-            LogUtils.e(TAG,"获取文件大小不存在!");
+            LogUtils.e(TAG, "获取文件大小不存在!");
         }
         return size;
     }
@@ -104,20 +104,20 @@ public class FileSizeUtil {
      * @return
      */
     public static String FormetFileSize(long fileS) {
-        DecimalFormat df = new DecimalFormat("#.00");
-        String fileSizeString = "";
+        DecimalFormat df = new DecimalFormat("#.0");
+        String fileSizeString;
         String wrongSize = "0B";
         if (fileS == 0) {
             return wrongSize;
         }
         if (fileS < 1024) {
             fileSizeString = df.format((double) fileS) + "B";
-        } else if (fileS < 1048576) {
+        } else if (fileS < (1024 * 1024)) {
             fileSizeString = df.format((double) fileS / 1024) + "KB";
-        } else if (fileS < 1073741824) {
-            fileSizeString = df.format((double) fileS / 1048576) + "MB";
+        } else if (fileS < (1024 * 1024 * 1024)) {
+            fileSizeString = df.format((double) fileS / (1024 * 1024)) + "MB";
         } else {
-            fileSizeString = df.format((double) fileS / 1073741824) + "GB";
+            fileSizeString = df.format((double) fileS / (1024 * 1024 * 1024)) + "GB";
         }
         return fileSizeString;
     }

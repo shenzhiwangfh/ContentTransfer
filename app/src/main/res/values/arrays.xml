@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <integer-array name="file_types">
+        <item>@drawable/type_picture</item>
+        <item>@drawable/type_video</item>
+        <item>@drawable/type_text</item>
+        <item>@drawable/type_radio</item>
+        <item>@drawable/type_picture</item>
+    </integer-array>
+</resources>

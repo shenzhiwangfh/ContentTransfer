@@ -2,13 +2,13 @@ package com.tct.transfer;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Bitmap;
 import android.graphics.Color;
-import android.graphics.Paint;
-import android.graphics.Typeface;
 import android.net.NetworkInfo;
 import android.net.wifi.WpsInfo;
 import android.net.wifi.p2p.WifiP2pConfig;
@@ -18,18 +18,24 @@ import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.DividerItemDecoration;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
-import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.tct.libzxing.zxing.activity.CaptureActivity;
 import com.tct.libzxing.zxing.encoding.EncodingUtils;
+import com.tct.transfer.adapter.BeanAdapter;
+import com.tct.transfer.database.FileBeanHelper;
+import com.tct.transfer.database.FileBeanProvider;
 import com.tct.transfer.file.FileBean;
 import com.tct.transfer.file.FileTransferGroupClient;
 import com.tct.transfer.file.FileTransferGroupOwner;
@@ -44,7 +50,6 @@ import com.tct.transfer.permission.PermissionInterface;
 import com.tct.transfer.permission.PermissionUtil;
 import com.tct.transfer.queue.WifiP2pMessage;
 import com.tct.transfer.queue.WifiP2pQueueManager;
-import com.tct.transfer.util.ThreadUtil;
 import com.tct.transfer.util.Utils;
 import com.tct.transfer.view.CircleBarView;
 import com.tct.transfer.wifi.WifiP2PReceiver;
@@ -53,11 +58,12 @@ import com.tct.transfer.wifi.WifiP2pInterface;
 import com.tct.transfer.log.Messenger;
 
 import java.text.DecimalFormat;
+import java.util.ArrayList;
 
 public class TransferActivity extends AppCompatActivity implements
         View.OnClickListener,
         WifiP2pInterface,
-        PermissionInterface {
+        PermissionInterface, BeanAdapter.OnItemClickListener, BeanAdapter.OnItemLongClickListener {
 
     private final static String TAG = "TransferActivity";
 
@@ -67,14 +73,17 @@ public class TransferActivity extends AppCompatActivity implements
     private Button mShare;
     //private TextView mFileName;
     private Button mAccept;
-    private ImageView mStatus;
+    private ImageView mWifiStatus;
 
     private ViewGroup mDeviceBar;
     private TextView mMyDeviceText;
     private TextView mCustomDeviceText;
+    private ImageView mMyDeviceAction;
+    private ImageView mCustomDeviceAction;
     private TextView mTransferText;
     private CircleBarView mTransferBar;
     private ImageView mQRCode;
+    private RecyclerView mRecyclerView;
 
     //private ScrollView mScroll;
     //private TextView mLog;
@@ -92,6 +101,10 @@ public class TransferActivity extends AppCompatActivity implements
     private WifiP2pDeviceInfo mMyDevice = new WifiP2pDeviceInfo();
     //private FileBean mBean;// = new FileBean();
     private String mPath;
+
+    private BeanAdapter mAdapter;
+    //private ArrayList<FileBean> mBeans = new ArrayList<>();
+    ContentResolver mResolver;
 
     private TransferStatus mTransferStatus = new TransferStatus() {
         @Override
@@ -111,10 +124,9 @@ public class TransferActivity extends AppCompatActivity implements
     };
 
     private TransferThread mThread;
-
     private class TransferThread extends Thread {
 
-        private FileBean bean;
+        private ArrayList<FileBean> beans = new ArrayList<>();
         private boolean loop;
 
         public TransferThread(boolean loop) {
@@ -127,27 +139,54 @@ public class TransferActivity extends AppCompatActivity implements
 
             while (loop) {
                 try {
-                    Thread.sleep(100);
+                    Thread.sleep(200);
                 } catch (InterruptedException e) {
 
                 }
 
-                if (loop) {
-                    sendMessage();
-                }
+                //if (loop) {
+                sendMessage();
+                //}
             }
-            sendMessage();
+
+            for (int i = 0; i < beans.size(); i++) {
+                sendMessage();
+            }
         }
 
-        private void sendMessage() {
+        private synchronized void sendMessage() {
+            if (beans.size() > 0) {
+                FileBean bean = beans.get(0);
+                sendMessage(bean);
+                beans.remove(0);
+            }
+        }
+
+        private void sendMessage(FileBean bean) {
+            //if (beans.size() > 0) {
             Message msg = Message.obtain();
             msg.what = DefaultValue.MESSAGE_TRANSFER_STATUS;
             msg.obj = bean;//getString(R.string.transfer_start);
             mHandler.sendMessage(msg);
+
+            //beans.remove(0);
+            //}
         }
 
-        public void setBean(FileBean bean) {
-            this.bean = bean;
+        public synchronized void setBean(FileBean bean) {
+            //this.bean = bean;
+            if (beans.size() == 0) {
+                //beans.add(bean);
+            } else {
+                FileBean lastBean = beans.get(beans.size() - 1);
+                if (bean.status > lastBean.status) {
+                    //beans.add(bean);
+                } else {
+                    beans.remove(beans.size() - 1);
+                    //beans.add(bean);
+                }
+            }
+            beans.add(new FileBean(bean));
         }
 
         public void setLoop(boolean loop) {
@@ -170,20 +209,23 @@ public class TransferActivity extends AppCompatActivity implements
 
         mShare = findViewById(R.id.share_file);
         mAccept = findViewById(R.id.accept_file);
-        mStatus = findViewById(R.id.status);
+        mWifiStatus = findViewById(R.id.wifi_status);
 
         mQRCode = findViewById(R.id.qr_big_code);
         mMyDeviceText = findViewById(R.id.my_device);
         mCustomDeviceText = findViewById(R.id.custom_device);
+        mMyDeviceAction = findViewById(R.id.my_device_action);
+        mCustomDeviceAction = findViewById(R.id.custom_device_action);
         mTransferText = findViewById(R.id.transfer_status);
         mDeviceBar = findViewById(R.id.device_bar);
         mTransferBar = findViewById(R.id.transfer_bar);
+        mRecyclerView = findViewById(R.id.transfer_list);
 
-        Typeface typeface = null;
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            typeface = getResources().getFont(R.font.myfont);
-        }
-        if(typeface != null) mTransferText.setTypeface(typeface);
+        //Typeface typeface = null;
+        //if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+        //    typeface = getResources().getFont(R.font.myfont);
+        //}
+        //if(typeface != null) mTransferText.setTypeface(typeface);
         mTransferBar.setMaxNum(100);
 
         //mScroll = findViewById(R.id.log_scrollview);
@@ -192,7 +234,18 @@ public class TransferActivity extends AppCompatActivity implements
 
         mShare.setOnClickListener(this);
         mAccept.setOnClickListener(this);
-        mStatus.setBackgroundColor(Color.GRAY);
+        mWifiStatus.setOnClickListener(this);
+
+        // TODO 设置布局管理器,不然无法显示
+        LinearLayoutManager mLayoutManager = new LinearLayoutManager(this);
+        mRecyclerView.setLayoutManager(mLayoutManager);
+        mAdapter = new BeanAdapter(mContext, null);
+        mAdapter.setOnItemClickListener(this);
+        mAdapter.setOnItemLongClickListener(this);
+        mRecyclerView.setAdapter(mAdapter);
+        mRecyclerView.addItemDecoration(new DividerItemDecoration(this, DividerItemDecoration.VERTICAL));
+
+        mResolver = getContentResolver();
 
         mManager = (WifiP2pManager) getSystemService(Context.WIFI_P2P_SERVICE);
         mChannel = mManager.initialize(this, getMainLooper(), null);
@@ -291,6 +344,14 @@ public class TransferActivity extends AppCompatActivity implements
                         .start();
             }
             break;
+            case R.id.wifi_status: {
+                try {
+                    startActivity(new Intent(Settings.ACTION_WIFI_SETTINGS));
+                } catch (Exception e) {
+
+                }
+            }
+            break;
         }
     }
 
@@ -373,15 +434,10 @@ public class TransferActivity extends AppCompatActivity implements
                     registerReceiver();
                     break;
                 case DefaultValue.MESSAGE_WIFI_STATUS_CHANGED:
-                    if (isWifiOpened()) {
-                        mStatus.setBackgroundColor(Color.GREEN);
-                        mShare.setEnabled(true);
-                        mAccept.setEnabled(true);
-                    } else {
-                        mStatus.setBackgroundColor(Color.GRAY);
-                        mShare.setEnabled(false);
-                        mAccept.setEnabled(false);
-                    }
+                    mWifiStatus.setBackgroundResource(isWifiOpened() ? R.drawable.top_button_disable : R.drawable.top_button_red);
+                    mWifiStatus.setImageResource(isWifiOpened() ? R.drawable.ic_wifi_green : R.drawable.ic_wifi_grey);
+                    mShare.setEnabled(isWifiOpened());
+                    mAccept.setEnabled(isWifiOpened());
                     break;
                 case DefaultValue.MESSAGE_WIFI_DISCOVER:
                     LogUtils.e(TAG, "handler,MESSAGE_WIFI_DISCOVER");
@@ -420,15 +476,30 @@ public class TransferActivity extends AppCompatActivity implements
                 case DefaultValue.MESSAGE_TRANSFER_STATUS:
                     FileBean bean = (FileBean) msg.obj;
 
-                    String text;
+                    //String text;
                     if (bean.status == 0) {
+                        if (bean.action == 0) {
+                            mMyDeviceAction.setImageResource(R.drawable.ic_upload);
+                            mCustomDeviceAction.setImageResource(R.drawable.ic_download);
+                        } else {
+                            mMyDeviceAction.setImageResource(R.drawable.ic_download);
+                            mCustomDeviceAction.setImageResource(R.drawable.ic_upload);
+                        }
                         mTransferText.setText(getString(R.string.transfer_start));
                     } else if (bean.status == 2) {
+                        float percent = (bean.transferSize) / (float) bean.size;
+                        String showText = df.format(percent) + " " + Utils.long2time(mContext, bean.elapsed);
+                        mTransferBar.setProgressNum(percent, 0, showText, bean);
+
+                        //long elapsed = System.currentTimeMillis() - bean.time;
+                        //mTransferText.setText(getString(R.string.transfer_end, Utils.long2time(mContext, elapsed)));
                         mTransferText.setText(getString(R.string.transfer_end));
+
+                        insertBean(bean);
                     } else {
                         float percent = (bean.transferSize) / (float) bean.size;
-                        String showText = df.format(percent);// + "\n" + transferSize + "\n" + Utils.long2time(bean.elapsed);
-                        mTransferBar.setProgressNum(percent, 0, showText);
+                        String showText = df.format(percent) + " " + Utils.long2time(mContext, bean.elapsed);
+                        mTransferBar.setProgressNum(percent, 0, showText, bean);
 
                         String transferSize = FileSizeUtil.FormetFileSize(bean.transferSize) + "/" + FileSizeUtil.FormetFileSize(bean.size);
                         mTransferText.setText(transferSize);
@@ -539,12 +610,12 @@ public class TransferActivity extends AppCompatActivity implements
                     if (info.groupFormed && info.isGroupOwner) {
                         //确定为组拥有者，创建线程用于接收连接请求
                         //提交图片下载、读取的异步任务
-                        Messenger.sendMessage("Group Owner");
+                        //Messenger.sendMessage("Group Owner");
                         mMyDevice.setOwner(true);
                     } else if (info.groupFormed) {
                         //作为客户端，创建一个线程用于连接组拥有者
                         ip = info.groupOwnerAddress.getHostAddress();
-                        Messenger.sendMessage("Group Client");
+                        //Messenger.sendMessage("Group Client");
                         mMyDevice.setOwner(false);
                         mMyDevice.setPeerIp(ip);
                         //mCustomDevice.setIp(ip);
@@ -569,5 +640,36 @@ public class TransferActivity extends AppCompatActivity implements
                 }
             });
         }
+    }
+
+    @Override
+    public void onItemClick(FileBean bean) {
+        LogUtils.e(TAG, "onItemClick=" + bean.toString());
+    }
+
+    @Override
+    public void onItemLongClick(FileBean bean) {
+        LogUtils.e(TAG, "onItemLongClick=" + bean.toString());
+    }
+
+    private void insertBean(FileBean bean) {
+        ContentValues value = new ContentValues();
+        value.put(FileBeanHelper.PATH, bean.path);
+        value.put(FileBeanHelper.NAME, bean.name);
+        value.put(FileBeanHelper.MD5, bean.md5);
+        value.put(FileBeanHelper.SIZE, bean.size);
+        value.put(FileBeanHelper.TRANSFER_SIZE, bean.transferSize);
+        value.put(FileBeanHelper.TRANSFER_ACTION, bean.action);
+        value.put(FileBeanHelper.TIME, bean.time);
+        value.put(FileBeanHelper.ELAPSED, bean.elapsed);
+        value.put(FileBeanHelper.TYPE, bean.type);
+        value.put(FileBeanHelper.STATUS, bean.status);
+        value.put(FileBeanHelper.RESULT, bean.result);
+        mResolver.insert(DefaultValue.uri, value);
+        mAdapter.changeBeans();
+    }
+
+    private void deleteBean() {
+
     }
 }

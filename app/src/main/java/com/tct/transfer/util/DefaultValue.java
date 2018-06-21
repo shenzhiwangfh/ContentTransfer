@@ -1,6 +1,10 @@
 package com.tct.transfer.util;
 
+import android.net.Uri;
 import android.os.Environment;
+
+import com.tct.transfer.database.FileBeanHelper;
+import com.tct.transfer.database.FileBeanProvider;
 
 public class DefaultValue {
 
@@ -30,4 +34,6 @@ public class DefaultValue {
     public final static int TRANSFER_START = 0;
     public final static int TRANSFER_END = 1;
     public final static int TRANSFER_ERROR = 100;
+
+    public final static Uri uri = Uri.parse("content://" + FileBeanProvider.AUTHORITY + "/" + FileBeanHelper.TABLE_NAME);
 }

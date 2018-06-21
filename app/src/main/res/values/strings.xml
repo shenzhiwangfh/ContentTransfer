@@ -17,11 +17,11 @@
     <string name="status_host">本机名称:%1$s</string>
     <string name="status_wifi_not_opened">WIFI 未打开</string>
     <string name="status_wifi_opened">WIFI 已打开</string>
-    <string name="status_p2p_peer">P2P 匹配中</string>
-    <string name="status_p2p_peer_changed">P2P 发现新的匹配信息</string>
-    <string name="status_p2p_connect">P2P 开始连接:%1$s</string>
-    <string name="status_p2p_not_connected">P2P 未匹配</string>
-    <string name="status_p2p_connected">P2P 已匹配</string>
+    <string name="status_p2p_peer">匹配中</string>
+    <string name="status_p2p_peer_changed">发现新的匹配信息</string>
+    <string name="status_p2p_connect">开始连接</string>
+    <string name="status_p2p_not_connected">未匹配</string>
+    <string name="status_p2p_connected">已匹配</string>
 
     <string name="transfer_server">服务器</string>
     <string name="transfer_client">客户端</string>
@@ -31,5 +31,10 @@
     <string name="transfer_client_end">完成接收:%1$s</string>
     <string name="transfer_error">传输异常:%1$s</string>
     <string name="transfer_start">开始传输</string>
-    <string name="transfer_end">已完成，耗时:%1$s</string>
+    <string name="transfer_end">已完成</string>
+    <string name="transfer_elapsed">耗时:%1$s</string>
+
+    <string name="hour">小时</string>
+    <string name="minute">分钟</string>
+    <string name="second">秒</string>
 </resources>

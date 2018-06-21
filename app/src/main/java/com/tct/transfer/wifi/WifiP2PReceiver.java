@@ -31,9 +31,9 @@ public class WifiP2PReceiver extends BroadcastReceiver {
             LogUtils.e(TAG, "STATE:" + state);
             mWifiP2pInterface.setWifiState(state);
 
-            Messenger.sendMessage(mWifiP2pInterface.isWifiOpened()
-                    ? R.string.status_wifi_opened
-                    : R.string.status_wifi_not_opened);
+            //Messenger.sendMessage(mWifiP2pInterface.isWifiOpened()
+            //        ? R.string.status_wifi_opened
+            //        : R.string.status_wifi_not_opened);
         }
         /*get the list*/
         else if (WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION.equals(action)) {
@@ -61,11 +61,11 @@ public class WifiP2PReceiver extends BroadcastReceiver {
                         LogUtils.e(TAG, "PEERS matched");
                         break;
                     }
-                    Messenger.sendMessage("    " + peer.deviceName);
+                    //Messenger.sendMessage("    " + peer.deviceName);
                 }
 
                 if (matchedDevice != null) {
-                    Messenger.sendMessage(R.string.status_p2p_connect, matchedDevice.deviceName);
+                    Messenger.sendMessage(R.string.status_p2p_connect/*, matchedDevice.deviceName*/);
                     mWifiP2pInterface.connect(matchedDevice);
                 }
             }

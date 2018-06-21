@@ -21,6 +21,7 @@ import android.view.animation.Transformation;
 import android.widget.TextView;
 
 import com.tct.transfer.R;
+import com.tct.transfer.file.FileBean;
 import com.tct.transfer.log.LogUtils;
 
 /**
@@ -42,7 +43,8 @@ public class CircleBarView extends View {
     private float progressNum;//可以更新的进度条数值
     private float maxNum;//进度条最大值
 
-    private int progressColor;//进度条圆弧颜色
+    private int progressUpColor;//进度条圆弧颜色
+    private int progressDownColor;//进度条圆弧颜色
     private int bgColor;//背景圆弧颜色
     private float startAngle;//背景圆弧的起始角度
     private float sweepAngle;//背景圆弧扫过的角度
@@ -56,6 +58,7 @@ public class CircleBarView extends View {
     private OnAnimationListener onAnimationListener;
 
     private String text;
+    private FileBean bean;
 
     public CircleBarView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -65,7 +68,8 @@ public class CircleBarView extends View {
     private void init(Context context, AttributeSet attrs) {
         TypedArray typedArray = context.obtainStyledAttributes(attrs, R.styleable.CircleBarView);
 
-        progressColor = typedArray.getColor(R.styleable.CircleBarView_progress_color, Color.GREEN);
+        progressUpColor = typedArray.getColor(R.styleable.CircleBarView_progress_up_color, Color.YELLOW);
+        progressDownColor = typedArray.getColor(R.styleable.CircleBarView_progress_down_color, Color.GREEN);
         bgColor = typedArray.getColor(R.styleable.CircleBarView_bg_color, Color.GRAY);
         startAngle = typedArray.getFloat(R.styleable.CircleBarView_start_angle, 0);
         sweepAngle = typedArray.getFloat(R.styleable.CircleBarView_sweep_angle, 360);
@@ -80,7 +84,7 @@ public class CircleBarView extends View {
 
         progressPaint = new Paint();
         progressPaint.setStyle(Paint.Style.STROKE);//只描边，不填充
-        progressPaint.setColor(progressColor);
+        //progressPaint.setColor(progressColor);
         progressPaint.setAntiAlias(true);//设置抗锯齿
         progressPaint.setStrokeWidth(barWidth);
         progressPaint.setStrokeCap(Paint.Cap.ROUND);//设置画笔为圆角
@@ -129,7 +133,15 @@ public class CircleBarView extends View {
         super.onDraw(canvas);
 
         canvas.drawArc(mRectF, startAngle, sweepAngle, false, bgPaint);
-        canvas.drawArc(mRectF, startAngle, progressSweepAngle, false, progressPaint);
+        if(bean != null) {
+            if (bean.action == 0) { //upload
+                progressPaint.setColor(progressUpColor);
+                canvas.drawArc(mRectF, startAngle, progressSweepAngle, false, progressPaint);
+            } else if (bean.action == 1) { //download
+                progressPaint.setColor(progressDownColor);
+                canvas.drawArc(mRectF, startAngle + sweepAngle - progressSweepAngle, progressSweepAngle, false, progressPaint);
+            }
+        }
 
         Paint.FontMetrics fontMetrics = textPaint.getFontMetrics();
         float top = fontMetrics.top;//为基线到字体上边框的距离,即上图中的top
@@ -187,9 +199,10 @@ public class CircleBarView extends View {
      * @param progressNum 进度条数值
      * @param time        动画持续时间
      */
-    public void setProgressNum(float progressNum, int time,  String text) {
+    public void setProgressNum(float progressNum, int time,  String text, FileBean bean) {
         this.progressNum = progressNum;
         this.text = text;
+        this.bean = bean;
         progressSweepAngle = sweepAngle * progressNum * 100 / maxNum;
 
         invalidate();

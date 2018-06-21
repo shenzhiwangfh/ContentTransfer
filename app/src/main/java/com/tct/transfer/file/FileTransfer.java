@@ -35,6 +35,7 @@ public class FileTransfer {
             byte beanBytes[] = new byte[bodyLen];
             in.read(beanBytes, 0, bodyLen);
             bean = (FileBean) Utils.byteArrayToObject(beanBytes);
+            bean.action = 1;
 
             bean.name = bean.path.substring(bean.path.lastIndexOf("/") + 1);
             bean.path = DefaultValue.recvPath() + "/" + bean.name;

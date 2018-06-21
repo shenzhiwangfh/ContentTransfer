@@ -32,6 +32,11 @@
             </intent-filter>
         </activity>
 
+        <provider
+            android:authorities="com.tct.transfer.provider"
+            android:name=".database.FileBeanProvider"
+            android:enabled="true"/>
+
     </application>
 
 </manifest>

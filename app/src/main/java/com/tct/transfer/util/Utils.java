@@ -1,5 +1,8 @@
 package com.tct.transfer.util;
 
+import android.content.Context;
+
+import com.tct.transfer.R;
 import com.tct.transfer.log.LogUtils;
 
 import java.io.ByteArrayInputStream;
@@ -126,13 +129,24 @@ public class Utils {
         return allByte;
     }
 
-    public static String long2time(long elapsed) {
+    public static String long2time(Context context, long elapsed) {
+        if(elapsed < 1000) elapsed = 1000;
+
         int hour = (int) (elapsed / 1000 / 60 / 60);
         int minute = (int)((elapsed / 1000 / 60) % 60);
         int second = (int)((elapsed / 1000) % (60 * 60));
 
-        return String.format("%02d", hour) + ":" +
-                String.format("%02d", minute) + ":" +
-                String.format("%02d", second);
+        StringBuilder formatSB = new StringBuilder();
+        if(hour != 0) {
+            formatSB.append(String.format("%02d", hour)).append(context.getString(R.string.hour));
+        }
+        if(hour != 0 || minute != 0) {
+            formatSB.append(String.format("%02d", minute)).append(context.getString(R.string.minute));
+        }
+        //if(second != 0) {
+            formatSB.append(String.format("%02d", second)).append(context.getString(R.string.second));
+        //}
+
+        return formatSB.toString();
     }
 }

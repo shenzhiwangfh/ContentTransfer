@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@drawable/top_button_disable" android:state_enabled="false" />
+
+    <!-- 设置点击时字体颜色 -->
+    <item android:drawable="@drawable/top_button_pressed" android:state_pressed="true" />
+    <item android:drawable="@drawable/top_button_pressed" android:state_selected="true" />
+    <item android:drawable="@drawable/top_button_pressed" android:state_focused="true" />
+    <!-- 默认颜色 -->
+    <item android:drawable="@drawable/top_button_normal" />
+</selector>
