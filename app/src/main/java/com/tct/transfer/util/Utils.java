@@ -10,6 +10,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Locale;
 
 public class Utils {
 
@@ -129,24 +132,43 @@ public class Utils {
         return allByte;
     }
 
-    public static String long2time(Context context, long elapsed) {
-        if(elapsed < 1000) elapsed = 1000;
+    public static String long2elapsed(Context context, long elapsed) {
+        if (elapsed < 1000) elapsed = 1000;
 
         int hour = (int) (elapsed / 1000 / 60 / 60);
-        int minute = (int)((elapsed / 1000 / 60) % 60);
-        int second = (int)((elapsed / 1000) % (60 * 60));
+        int minute = (int) ((elapsed / 1000 / 60) % 60);
+        int second = (int) ((elapsed / 1000) % (60 * 60));
 
         StringBuilder formatSB = new StringBuilder();
-        if(hour != 0) {
-            formatSB.append(String.format("%02d", hour)).append(context.getString(R.string.hour));
+        if (hour != 0) {
+            formatSB.append(format02(hour)).append(context.getString(R.string.hour));
         }
-        if(hour != 0 || minute != 0) {
-            formatSB.append(String.format("%02d", minute)).append(context.getString(R.string.minute));
+        if (hour != 0 || minute != 0) {
+            formatSB.append(format02(minute)).append(context.getString(R.string.minute));
         }
         //if(second != 0) {
-            formatSB.append(String.format("%02d", second)).append(context.getString(R.string.second));
+        formatSB.append(format02(second)).append(context.getString(R.string.second));
         //}
 
         return formatSB.toString();
+    }
+
+    public static String long2time(long time) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeInMillis(time);
+
+        StringBuilder formatSB = new StringBuilder();
+        formatSB.append(format02(calendar.get(Calendar.YEAR))).append("-")
+                .append(format02(calendar.get(Calendar.MONTH))).append("-")
+                .append(format02(calendar.get(Calendar.DAY_OF_MONTH))).append(" ")
+                .append(format02(calendar.get(Calendar.HOUR_OF_DAY))).append(":")
+                .append(format02(calendar.get(Calendar.MINUTE))).append(":")
+                .append(format02(calendar.get(Calendar.SECOND)));
+
+        return formatSB.toString();
+    }
+
+    private static String format02(long number) {
+        return String.format(Locale.getDefault(), "%02d", number);
     }
 }

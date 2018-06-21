@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="60dp">
+    android:layout_height="60dp"
+    android:paddingEnd="10dp"
+    android:paddingStart="10dp"
+    android:backgroundTint="@color/item_background">
 
     <ImageView
         android:id="@+id/bean_type"
@@ -35,7 +38,16 @@
             android:id="@+id/bean_size"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textAppearance="?android:attr/textAppearanceSmall"/>
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:layout_marginStart="4dp"/>
+
+        <TextView
+            android:id="@+id/bean_time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:layout_marginStart="4dp"
+            android:textColor="@android:color/holo_blue_dark"/>
 
         <ImageView
             android:id="@+id/bean_action"
@@ -46,11 +58,11 @@
             android:layout_marginStart="4dp"/>
 
         <ImageView
-            android:id="@+id/bean_status"
+            android:id="@+id/bean_result"
             android:layout_width="12dp"
             android:layout_height="12dp"
             android:scaleType="centerInside"
-            android:src="@drawable/status_ok"
+            android:src="@drawable/result_ok"
             android:layout_marginStart="4dp"/>
     </LinearLayout>
 

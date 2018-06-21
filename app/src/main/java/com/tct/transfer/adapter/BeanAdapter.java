@@ -16,6 +16,7 @@ import com.tct.transfer.file.FileBean;
 import com.tct.transfer.log.LogUtils;
 import com.tct.transfer.util.DefaultValue;
 import com.tct.transfer.util.FileSizeUtil;
+import com.tct.transfer.util.Utils;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -51,9 +52,10 @@ public class BeanAdapter extends RecyclerView.Adapter<BeanAdapter.ViewHolder> im
         private View v;
         public ImageView viewType;
         public TextView viewName;
+        public TextView viewTime;
         public TextView viewSize;
         public ImageView viewAction;
-        public ImageView viewStatus;
+        public ImageView viewResult;
 
         // TODO Auto-generated method stub
         public ViewHolder(View v) {
@@ -82,9 +84,10 @@ public class BeanAdapter extends RecyclerView.Adapter<BeanAdapter.ViewHolder> im
     public void changeBeans() {
         mBeans.clear();
 
+        final String sortOrder = FileBeanHelper._ID + " desc";
         Cursor cursor = mContext.getContentResolver().query(
-                DefaultValue.uri, null, null, null, null);
-        if(cursor != null && cursor.moveToFirst()) {
+                DefaultValue.uri, null, null, null, sortOrder);
+        if (cursor != null && cursor.moveToFirst()) {
             while (!cursor.isAfterLast()) {
                 FileBean bean = new FileBean();
                 bean._id = cursor.getInt(cursor.getColumnIndex(FileBeanHelper._ID));
@@ -114,9 +117,10 @@ public class BeanAdapter extends RecyclerView.Adapter<BeanAdapter.ViewHolder> im
         BeanAdapter.ViewHolder holder = new BeanAdapter.ViewHolder(v);
         holder.viewType = v.findViewById(R.id.bean_type);
         holder.viewName = v.findViewById(R.id.bean_name);
+        holder.viewTime = v.findViewById(R.id.bean_time);
         holder.viewSize = v.findViewById(R.id.bean_size);
         holder.viewAction = v.findViewById(R.id.bean_action);
-        holder.viewStatus = v.findViewById(R.id.bean_status);
+        holder.viewResult = v.findViewById(R.id.bean_result);
 
         v.setOnClickListener(this);
         v.setOnLongClickListener(this);
@@ -130,9 +134,10 @@ public class BeanAdapter extends RecyclerView.Adapter<BeanAdapter.ViewHolder> im
 
         viewHolder.viewType.setImageResource(mTypes[bean.type]);
         viewHolder.viewName.setText(bean.name);
+        viewHolder.viewTime.setText(Utils.long2time(bean.time));
         viewHolder.viewSize.setText(FileSizeUtil.FormetFileSize(bean.size));
         viewHolder.viewAction.setImageResource(bean.action == 0 ? R.drawable.ic_upload : R.drawable.ic_download);
-        //viewHolder.viewStatus.setImageResource();
+        viewHolder.viewResult.setImageResource(bean.result == 0 ? R.drawable.result_ok : R.drawable.result_error);
 
         viewHolder.v.setTag(bean);
     }

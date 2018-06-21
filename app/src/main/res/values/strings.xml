@@ -10,6 +10,8 @@
 
     <string name="share_file">分享文件</string>
     <string name="accept_file">接收文件</string>
+    <string name="cancel_recv">停止接收</string>
+    <string name="cancel_send">停止发送</string>
 
     <string name="my_device_name">%1$s</string>
     <string name="custom_device_name">%1$s</string>
@@ -18,7 +20,7 @@
     <string name="status_wifi_not_opened">WIFI 未打开</string>
     <string name="status_wifi_opened">WIFI 已打开</string>
     <string name="status_p2p_peer">匹配中</string>
-    <string name="status_p2p_peer_changed">发现新的匹配信息</string>
+    <string name="status_p2p_peer_changed">发现新设备</string>
     <string name="status_p2p_connect">开始连接</string>
     <string name="status_p2p_not_connected">未匹配</string>
     <string name="status_p2p_connected">已匹配</string>
@@ -29,7 +31,7 @@
     <string name="transfer_server_end">完成发送</string>
     <string name="transfer_client_start">开始接收</string>
     <string name="transfer_client_end">完成接收:%1$s</string>
-    <string name="transfer_error">传输异常:%1$s</string>
+    <string name="transfer_error">传输异常</string>
     <string name="transfer_start">开始传输</string>
     <string name="transfer_end">已完成</string>
     <string name="transfer_elapsed">耗时:%1$s</string>

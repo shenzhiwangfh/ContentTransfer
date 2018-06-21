@@ -6,6 +6,10 @@ public class WifiP2pMessageQueue {
 
     private ArrayList<WifiP2pMessage> mQueue = new ArrayList<>();
 
+    public synchronized void cleanMessage() {
+        mQueue.clear();
+    }
+
     public synchronized void addMessage(WifiP2pMessage msg) {
         mQueue.add(msg);
     }

@@ -37,7 +37,7 @@ public class WifiP2PReceiver extends BroadcastReceiver {
         }
         /*get the list*/
         else if (WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION.equals(action)) {
-            Messenger.sendMessage(R.string.status_p2p_peer_changed);
+            Messenger.sendMessage(Messenger.LEVEL2, R.string.status_p2p_peer_changed);
 
             LogUtils.e(TAG, "PEERS");
             WifiP2pDeviceList peers = intent.getParcelableExtra(WifiP2pManager.EXTRA_P2P_DEVICE_LIST);
@@ -65,7 +65,6 @@ public class WifiP2PReceiver extends BroadcastReceiver {
                 }
 
                 if (matchedDevice != null) {
-                    Messenger.sendMessage(R.string.status_p2p_connect/*, matchedDevice.deviceName*/);
                     mWifiP2pInterface.connect(matchedDevice);
                 }
             }
@@ -76,11 +75,12 @@ public class WifiP2PReceiver extends BroadcastReceiver {
             NetworkInfo networkInfo = intent.getParcelableExtra(WifiP2pManager.EXTRA_NETWORK_INFO);
             LogUtils.e(TAG, "CONNECTION:" + networkInfo.isConnected());
 
-            Messenger.sendMessage(networkInfo.isConnected()
-                    ? R.string.status_p2p_connected
-                    : R.string.status_p2p_not_connected);
+            //Messenger.sendMessage(networkInfo.isConnected()
+            //        ? R.string.status_p2p_connected
+            //        : R.string.status_p2p_not_connected);
 
             if (networkInfo.isConnected()) {
+                Messenger.sendMessage(Messenger.LEVEL2, R.string.status_p2p_connected);
                 mWifiP2pInterface.requestConnect(networkInfo);
             }
         }

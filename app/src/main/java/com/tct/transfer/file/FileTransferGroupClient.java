@@ -64,6 +64,7 @@ public class FileTransferGroupClient extends Thread {
             socket.close();
         } catch (IOException e) {
             LogUtils.e(TAG, "FileTransferGroupClient,e=" + e.toString());
+            bean.result = 1;
         } finally {
             if (socket != null) {
                 if (socket.isConnected()) {

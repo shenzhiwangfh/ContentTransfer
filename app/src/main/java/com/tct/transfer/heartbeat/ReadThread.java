@@ -1,4 +1,4 @@
-package com.tct.transfer.heart;
+package com.tct.transfer.heartbeat;
 
 import com.tct.transfer.util.Utils;
 import com.tct.transfer.wifi.WifiP2pDeviceInfo;

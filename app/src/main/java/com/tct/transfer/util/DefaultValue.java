@@ -31,9 +31,20 @@ public class DefaultValue {
         return Environment.getExternalStorageDirectory() + "/" + "TctRecvPicture";
     }
 
-    public final static int TRANSFER_START = 0;
-    public final static int TRANSFER_END = 1;
-    public final static int TRANSFER_ERROR = 100;
-
     public final static Uri uri = Uri.parse("content://" + FileBeanProvider.AUTHORITY + "/" + FileBeanHelper.TABLE_NAME);
+
+    //0:image, 1:video, 2:text, 3:audio, 4:other
+    public final static int TYPE_IMAGE = 0;
+    public final static int TYPE_VIDEO = 1;
+    public final static int TYPE_TEXT = 2;
+    public final static int TYPE_AUDIO = 3;
+    public final static int TYPE_OTHER = 4;
+
+    public final static String NETWORK_STATUS_OK = "TCT_OK";
+    public final static String NETWORK_STATUS_ERROR = "TCT_ERROR";
+
+    public final static int STATUS_INIT = 0;
+    public final static int STATUS_PEER = 1;
+    public final static int STATUS_CONNECTED = 2;
+    public final static int STATUS_COMPLETE = 3;
 }

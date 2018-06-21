@@ -42,7 +42,7 @@ public class FileTransfer {
             LogUtils.e(TAG, "client,bean=" + bean.toString());
 
             //send ready ok
-            writeStatus(out, FileUtil.STATUS_OK);
+            writeStatus(out, DefaultValue.NETWORK_STATUS_OK);
             LogUtils.e(TAG, "client,ready ok");
 
             //recv file start
@@ -54,7 +54,7 @@ public class FileTransfer {
             file.createNewFile();
 
             OutputStream os = new FileOutputStream(file);
-            FileUtil.copyFile(in, os, bean, listener);
+            copyFile(in, os, bean, listener);
             //os.close();
 
             //judge md5
@@ -66,14 +66,14 @@ public class FileTransfer {
             }
 
             //send result
-            String result = (bean.result == 0) ? FileUtil.STATUS_OK : FileUtil.STATUS_ERROR;
+            String result = (bean.result == 0) ? DefaultValue.NETWORK_STATUS_OK : DefaultValue.NETWORK_STATUS_ERROR;
             writeStatus(out, result);
             //Messenger.sendMessage(result);
 
             bean.status = 2; //end
             if(listener != null) listener.sendStatus(bean);
         } catch (IOException e) {
-
+            bean.result = 1;
         }
     }
 
@@ -105,7 +105,7 @@ public class FileTransfer {
             //send file start
             if (ready) {
                 InputStream is = new FileInputStream(new File(bean.path));
-                FileUtil.copyFile(is, out, bean, listener);
+                copyFile(is, out, bean, listener);
                 //is.close();
             }
 
@@ -116,8 +116,34 @@ public class FileTransfer {
             bean.status = 2; //end
             if(listener != null) listener.sendStatus(bean);
         } catch (IOException e) {
-
+            bean.result = 1;
         }
+    }
+
+    private static boolean copyFile(InputStream in, OutputStream out, FileBean bean, TransferStatus listener) {
+        byte buf[] = new byte[1024];
+        int len;
+
+        bean.transferSize = 0;
+        bean.time = System.currentTimeMillis();
+
+        try {
+            while ((len = in.read(buf)) != -1) {
+                out.write(buf, 0, len);
+                bean.transferSize += len;
+                bean.elapsed = System.currentTimeMillis() - bean.time;
+                if (listener != null) listener.sendStatus(bean);
+
+                if(bean.transferSize == bean.size) {
+                    break;
+                }
+            }
+            //out.close();
+            //in.close();
+        } catch (IOException e) {
+            return false;
+        }
+        return true;
     }
 
     private static String readStatus(InputStream in) {
@@ -146,9 +172,9 @@ public class FileTransfer {
         if (status == null || status.isEmpty())
             return false;
 
-        if (status.equals(FileUtil.STATUS_OK)) {
+        if (status.equals(DefaultValue.NETWORK_STATUS_OK)) {
             return true;
-        } else if (status.equals(FileUtil.STATUS_ERROR)) {
+        } else if (status.equals(DefaultValue.NETWORK_STATUS_ERROR)) {
             return false;
         } else {
             return false;

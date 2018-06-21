@@ -16,12 +16,14 @@
         <Button
             android:id="@+id/share_file"
             android:text="@string/share_file"
-            style="@style/TopButton"/>
+            style="@style/TopButton"
+            android:enabled="false"/>
 
         <Button
             android:id="@+id/accept_file"
             android:text="@string/accept_file"
-            style="@style/TopButton"/>
+            style="@style/TopButton"
+            android:enabled="false"/>
 
         <ImageView
             android:id="@+id/wifi_status"
@@ -31,7 +33,7 @@
             android:layout_gravity="center"
             android:layout_marginEnd="10dp"
             android:layout_marginStart="10dp"
-            android:src="@drawable/ic_wifi_grey"
+            android:src="@drawable/ic_wifi_disable"
             android:background="@drawable/top_button_red"/>
     </LinearLayout>
 
@@ -68,8 +70,9 @@
             android:layout_centerHorizontal="true"
             app:bar_width="10dp"
             app:bg_color="@android:color/darker_gray"
-            app:progress_down_color="@android:color/holo_green_dark"
+            app:progress_down_color="@android:color/holo_blue_dark"
             app:progress_up_color="@android:color/holo_orange_dark"
+            app:progress_error_color="@android:color/holo_red_light"
             app:start_angle="200"
             app:sweep_angle="140" />
 
@@ -171,7 +174,5 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_marginTop="260dp"
-        android:paddingBottom="10dp"
-        android:paddingEnd="10dp"
-        android:paddingStart="10dp"/>
+        android:paddingBottom="10dp" />
 </RelativeLayout>

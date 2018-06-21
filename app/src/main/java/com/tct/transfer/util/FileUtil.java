@@ -25,9 +25,6 @@ import java.util.Map;
 
 public class FileUtil {
 
-    public final static String STATUS_OK = "TCT_OK";
-    public final static String STATUS_ERROR = "TCT_ERROR";
-
     public static String getPath(final Context context, final Uri uri) {
         // DocumentProvider
         if (DocumentsContract.isDocumentUri(context, uri)) {
@@ -113,30 +110,6 @@ public class FileUtil {
 
     public static boolean isMediaDocument(Uri uri) {
         return "com.android.providers.media.documents".equals(uri.getAuthority());
-    }
-
-    public static boolean copyFile(InputStream in, OutputStream out, FileBean bean, TransferStatus listener) {
-        byte buf[] = new byte[1024];
-        int len;
-
-        bean.transferSize = 0;
-        try {
-            while ((len = in.read(buf)) != -1) {
-                out.write(buf, 0, len);
-                bean.transferSize += len;
-                bean.elapsed = System.currentTimeMillis() - bean.time;
-                if (listener != null) listener.sendStatus(bean);
-
-                if(bean.transferSize == bean.size) {
-                    break;
-                }
-            }
-            //out.close();
-            //in.close();
-        } catch (IOException e) {
-            return false;
-        }
-        return true;
     }
 
     public static String getFileMD5(File file) {

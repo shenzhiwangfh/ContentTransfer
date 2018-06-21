@@ -8,7 +8,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Bitmap;
-import android.graphics.Color;
 import android.net.NetworkInfo;
 import android.net.wifi.WpsInfo;
 import android.net.wifi.p2p.WifiP2pConfig;
@@ -18,6 +17,7 @@ import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.os.PowerManager;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
@@ -35,7 +35,6 @@ import com.tct.libzxing.zxing.activity.CaptureActivity;
 import com.tct.libzxing.zxing.encoding.EncodingUtils;
 import com.tct.transfer.adapter.BeanAdapter;
 import com.tct.transfer.database.FileBeanHelper;
-import com.tct.transfer.database.FileBeanProvider;
 import com.tct.transfer.file.FileBean;
 import com.tct.transfer.file.FileTransferGroupClient;
 import com.tct.transfer.file.FileTransferGroupOwner;
@@ -43,13 +42,14 @@ import com.tct.transfer.util.DefaultValue;
 import com.tct.transfer.util.FileSizeUtil;
 import com.tct.transfer.util.FileUtil;
 import com.tct.transfer.file.TransferStatus;
-import com.tct.transfer.heart.HeartBeatTask;
+import com.tct.transfer.heartbeat.HeartBeatTask;
 import com.tct.transfer.log.LogUtils;
 import com.tct.transfer.permission.PermissionHelper;
 import com.tct.transfer.permission.PermissionInterface;
 import com.tct.transfer.permission.PermissionUtil;
 import com.tct.transfer.queue.WifiP2pMessage;
 import com.tct.transfer.queue.WifiP2pQueueManager;
+import com.tct.transfer.util.MediaFileUtil;
 import com.tct.transfer.util.Utils;
 import com.tct.transfer.view.CircleBarView;
 import com.tct.transfer.wifi.WifiP2PReceiver;
@@ -87,10 +87,12 @@ public class TransferActivity extends AppCompatActivity implements
 
     //private ScrollView mScroll;
     //private TextView mLog;
+    private int mStatus = DefaultValue.STATUS_INIT;
 
     private WifiP2PReceiver mReceiver;
     private WifiP2pManager mManager;
     private WifiP2pManager.Channel mChannel;
+    private WifiP2pQueueManager mQueueManager;
 
     private PermissionHelper mPermissionHelper;
 
@@ -110,7 +112,7 @@ public class TransferActivity extends AppCompatActivity implements
         @Override
         public void sendStatus(FileBean bean) {
             if (bean.status == 0) {
-                bean.time = System.currentTimeMillis();
+                //bean.time = System.currentTimeMillis();
                 mThread = new TransferThread(true);
                 mThread.setBean(bean);
                 mThread.start();
@@ -252,16 +254,17 @@ public class TransferActivity extends AppCompatActivity implements
 
         mReceiver = new WifiP2PReceiver(this);
 
-        WifiP2pQueueManager queueManager = new WifiP2pQueueManager(mManager, mChannel, new WifiP2pQueueManager.OnFinishListener() {
-            @Override
-            public void onFinish() {
-                mHandler.sendEmptyMessage(DefaultValue.MESSAGE_REGISTER);
-            }
-        });
-        queueManager
+        mQueueManager = WifiP2pQueueManager.init(mManager, mChannel);
+        mQueueManager.reset();
+        mQueueManager
                 .sendMessage(new WifiP2pMessage(WifiP2pMessage.MESSAGE_REMOVE_GROUP, null))
                 .sendMessage(new WifiP2pMessage(WifiP2pMessage.MESSAGE_CANCEL_CONNECT, null))
-                .start();
+                .setOnFinishListener(new WifiP2pQueueManager.OnFinishListener() {
+                    @Override
+                    public void onFinish() {
+                        mHandler.sendEmptyMessage(DefaultValue.MESSAGE_REGISTER);
+                    }
+                }).start();
     }
 
     @Override
@@ -301,7 +304,8 @@ public class TransferActivity extends AppCompatActivity implements
         switch (id) {
             case R.id.share_file: {
                 //setServer(true);
-                Messenger.clearMessage();
+                //Messenger.clearMessage();
+                mTransferBar.reset();
 
                 Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
                 //intent.setType("image/*"); //选择图片
@@ -315,33 +319,72 @@ public class TransferActivity extends AppCompatActivity implements
             break;
             case R.id.accept_file: {
                 //setServer(false);
-                mMyDevice.setServer(false);
-                Messenger.clearMessage();
 
-                int height = mQRCode.getHeight();
-                int width = mQRCode.getWidth();
-                final int len = height > width ? width : height;
-                String shareInfo = mMyDevice.toString();//getMyDevice().toString();
-                Bitmap bmp = EncodingUtils.createQRCode(shareInfo, len, len, null);
-                mQRCode.setImageBitmap(bmp);
+                if(mStatus >= DefaultValue.STATUS_PEER && mStatus <= DefaultValue.STATUS_CONNECTED) {
+                    mTransferBar.reset();
+                    mQRCode.setVisibility(View.INVISIBLE);
+                    mDeviceBar.setVisibility(View.VISIBLE);
+                    mTransferBar.setVisibility(View.VISIBLE);
+                    mShare.setEnabled(true);
+                    mAccept.setText(R.string.accept_file);
+                    mStatus = DefaultValue.STATUS_INIT;
+                    //Messenger.reset();
+                    mLooper = false;
+                    keepScreenOn(mContext, false);
+                    //Messenger.sendMessage(Messenger.LEVEL1, R.string.status_p2p_not_connected);
+                    //Messenger.setStatus(mStatus);
 
-                mLooper = true;
-                mQRCode.setVisibility(View.VISIBLE);
-                mDeviceBar.setVisibility(View.INVISIBLE);
-                mTransferBar.setVisibility(View.INVISIBLE);
+                    //WifiP2pQueueManager queueManager = new WifiP2pQueueManager(mManager, mChannel, null);
+                    mQueueManager.reset();
+                    mQueueManager
+                            .sendMessage(new WifiP2pMessage(WifiP2pMessage.MESSAGE_REMOVE_GROUP, null))
+                            .sendMessage(new WifiP2pMessage(WifiP2pMessage.MESSAGE_CANCEL_CONNECT, null))
+                            //.sendMessage(new WifiP2pMessage(WifiP2pMessage.MESSAGE_DISCOVER_PEERS, null))
+                            /*
+                            .setOnFinishListener(new WifiP2pQueueManager.OnFinishListener() {
+                                @Override
+                                public void onFinish() {
+                                    Messenger.reset();
+                                    Messenger.sendMessage(Messenger.LEVEL1, R.string.status_p2p_not_connected);
+                                }
+                            })
+                            */
+                            .start();
+                } else {
+                    mMyDevice.setServer(false);
+                    //Messenger.clearMessage();
 
-                WifiP2pQueueManager queueManager = new WifiP2pQueueManager(mManager, mChannel, new WifiP2pQueueManager.OnFinishListener() {
-                    @Override
-                    public void onFinish() {
-                        LogUtils.e(TAG, "MESSAGE_WIFI_DISCOVER finish");
-                        mHandler.sendEmptyMessage(DefaultValue.MESSAGE_WIFI_DISCOVER);
-                    }
-                });
-                queueManager
-                        .sendMessage(new WifiP2pMessage(WifiP2pMessage.MESSAGE_REMOVE_GROUP, null))
-                        .sendMessage(new WifiP2pMessage(WifiP2pMessage.MESSAGE_CANCEL_CONNECT, null))
-                        //.sendMessage(new WifiP2pMessage(WifiP2pMessage.MESSAGE_DISCOVER_PEERS, null))
-                        .start();
+                    mTransferBar.reset();
+                    mQRCode.setVisibility(View.VISIBLE);
+                    mDeviceBar.setVisibility(View.INVISIBLE);
+                    mTransferBar.setVisibility(View.INVISIBLE);
+                    mShare.setEnabled(false);
+                    mAccept.setText(R.string.cancel_recv);
+                    mStatus = DefaultValue.STATUS_PEER;
+                    Messenger.setStatus(mStatus);
+                    keepScreenOn(mContext, true);
+
+                    int height = mQRCode.getHeight();
+                    int width = mQRCode.getWidth();
+                    final int len = height > width ? width : height;
+                    String shareInfo = mMyDevice.toString();//getMyDevice().toString();
+                    Bitmap bmp = EncodingUtils.createQRCode(shareInfo, len, len, null);
+                    mQRCode.setImageBitmap(bmp);
+                    mLooper = true;
+
+                    mQueueManager.reset();
+                    mQueueManager
+                            .sendMessage(new WifiP2pMessage(WifiP2pMessage.MESSAGE_REMOVE_GROUP, null))
+                            .sendMessage(new WifiP2pMessage(WifiP2pMessage.MESSAGE_CANCEL_CONNECT, null))
+                            //.sendMessage(new WifiP2pMessage(WifiP2pMessage.MESSAGE_DISCOVER_PEERS, null))
+                            .setOnFinishListener(new WifiP2pQueueManager.OnFinishListener() {
+                                @Override
+                                public void onFinish() {
+                                    LogUtils.e(TAG, "MESSAGE_WIFI_DISCOVER finish");
+                                    mHandler.sendEmptyMessage(DefaultValue.MESSAGE_WIFI_DISCOVER);
+                                }
+                            }).start();
+                }
             }
             break;
             case R.id.wifi_status: {
@@ -375,22 +418,26 @@ public class TransferActivity extends AppCompatActivity implements
                     setCustomDevice(WifiP2pDeviceInfo.analysis(scanResult));
                     //setServer(true);
                     mMyDevice.setServer(true);
+                    mShare.setEnabled(false);
+                    mAccept.setText(R.string.cancel_send);
+                    mStatus = DefaultValue.STATUS_PEER;
+                    Messenger.setStatus(mStatus);
 
                     mLooper = true;
                     //mQRCode.setVisibility(View.VISIBLE);
 
-                    WifiP2pQueueManager queueManager = new WifiP2pQueueManager(mManager, mChannel, new WifiP2pQueueManager.OnFinishListener() {
-                        @Override
-                        public void onFinish() {
-                            LogUtils.e(TAG, "MESSAGE_WIFI_DISCOVER finish");
-                            mHandler.sendEmptyMessage(DefaultValue.MESSAGE_WIFI_DISCOVER);
-                        }
-                    });
-                    queueManager
+                    mQueueManager.reset();
+                    mQueueManager
                             .sendMessage(new WifiP2pMessage(WifiP2pMessage.MESSAGE_REMOVE_GROUP, null))
                             .sendMessage(new WifiP2pMessage(WifiP2pMessage.MESSAGE_CANCEL_CONNECT, null))
                             //.sendMessage(new WifiP2pMessage(WifiP2pMessage.MESSAGE_DISCOVER_PEERS, null))
-                            .start();
+                            .setOnFinishListener(new WifiP2pQueueManager.OnFinishListener() {
+                                @Override
+                                public void onFinish() {
+                                    LogUtils.e(TAG, "MESSAGE_WIFI_DISCOVER finish");
+                                    mHandler.sendEmptyMessage(DefaultValue.MESSAGE_WIFI_DISCOVER);
+                                }
+                            }).start();
                 }
             }
         }
@@ -432,32 +479,37 @@ public class TransferActivity extends AppCompatActivity implements
             switch (what) {
                 case DefaultValue.MESSAGE_REGISTER:
                     registerReceiver();
+                    mAccept.setEnabled(true);
+                    mShare.setEnabled(true);
                     break;
                 case DefaultValue.MESSAGE_WIFI_STATUS_CHANGED:
                     mWifiStatus.setBackgroundResource(isWifiOpened() ? R.drawable.top_button_disable : R.drawable.top_button_red);
-                    mWifiStatus.setImageResource(isWifiOpened() ? R.drawable.ic_wifi_green : R.drawable.ic_wifi_grey);
+                    mWifiStatus.setImageResource(isWifiOpened() ? R.drawable.ic_wifi_normal : R.drawable.ic_wifi_disable);
                     mShare.setEnabled(isWifiOpened());
                     mAccept.setEnabled(isWifiOpened());
+                    mWifiStatus.setEnabled(!isWifiOpened());
+                    if(!isWifiOpened()) Messenger.sendMessage(Messenger.LEVEL0, R.string.status_wifi_not_opened);
                     break;
                 case DefaultValue.MESSAGE_WIFI_DISCOVER:
                     LogUtils.e(TAG, "handler,MESSAGE_WIFI_DISCOVER");
 
                     if (mLooper) {
                         //LogUtils.e(TAG, "handler,MESSAGE_WIFI_DISCOVER,loop");
-                        Messenger.sendMessage(R.string.status_p2p_peer);
+                        Messenger.sendMessage(Messenger.LEVEL1, R.string.status_p2p_peer);
 
-                        WifiP2pQueueManager queueManager = new WifiP2pQueueManager(mManager, mChannel, new WifiP2pQueueManager.OnFinishListener() {
-                            @Override
-                            public void onFinish() {
-                                LogUtils.e(TAG, "MESSAGE_WIFI_DISCOVER finish");
-                                //registerReceiver();
-                                mHandler.sendEmptyMessageDelayed(DefaultValue.MESSAGE_WIFI_DISCOVER, 30 * 1000);
-                            }
-                        });
-                        queueManager
+                        mQueueManager.reset();
+                        mQueueManager
                                 //.sendMessage(new WifiP2pMessage(WifiP2pMessage.MESSAGE_REMOVE_GROUP, null))
                                 //.sendMessage(new WifiP2pMessage(WifiP2pMessage.MESSAGE_CANCEL_CONNECT, null))
                                 .sendMessage(new WifiP2pMessage(WifiP2pMessage.MESSAGE_DISCOVER_PEERS, null))
+                                .setOnFinishListener(new WifiP2pQueueManager.OnFinishListener() {
+                                    @Override
+                                    public void onFinish() {
+                                        LogUtils.e(TAG, "MESSAGE_WIFI_DISCOVER finish");
+                                        //registerReceiver();
+                                        mHandler.sendEmptyMessageDelayed(DefaultValue.MESSAGE_WIFI_DISCOVER, 30 * 1000);
+                                    }
+                                })
                                 .start();
 
                     }
@@ -485,24 +537,42 @@ public class TransferActivity extends AppCompatActivity implements
                             mMyDeviceAction.setImageResource(R.drawable.ic_download);
                             mCustomDeviceAction.setImageResource(R.drawable.ic_upload);
                         }
-                        mTransferText.setText(getString(R.string.transfer_start));
+                        //mTransferText.setText(getString(R.string.transfer_start));
+                        Messenger.sendMessage(Messenger.LEVEL2, R.string.transfer_start);
                     } else if (bean.status == 2) {
                         float percent = (bean.transferSize) / (float) bean.size;
-                        String showText = df.format(percent) + " " + Utils.long2time(mContext, bean.elapsed);
+                        String showText = df.format(percent) + " " + Utils.long2elapsed(mContext, bean.elapsed);
                         mTransferBar.setProgressNum(percent, 0, showText, bean);
 
                         //long elapsed = System.currentTimeMillis() - bean.time;
                         //mTransferText.setText(getString(R.string.transfer_end, Utils.long2time(mContext, elapsed)));
-                        mTransferText.setText(getString(R.string.transfer_end));
+                        //mTransferText.setText(getString(R.string.transfer_end));
+                        mShare.setEnabled(true);
+                        mAccept.setText(R.string.accept_file);
+                        mStatus = DefaultValue.STATUS_COMPLETE;
+                        Messenger.setStatus(mStatus);
+                        Messenger.sendMessage(Messenger.LEVEL3, bean.result == 0 ? R.string.transfer_end : R.string.transfer_error);
+
+                        //0:picture, 1:video, 2:text, 3:audio, 4:other
+                        if(MediaFileUtil.isImageFileType(bean.path)) {
+                            bean.type = DefaultValue.TYPE_IMAGE;
+                        } else if(MediaFileUtil.isVideoFileType(bean.path)) {
+                            bean.type = DefaultValue.TYPE_VIDEO;
+                        } else if(MediaFileUtil.isAudioFileType(bean.path)) {
+                            bean.type = DefaultValue.TYPE_AUDIO;
+                        } else {
+                            bean.type = DefaultValue.TYPE_OTHER;
+                        }
 
                         insertBean(bean);
                     } else {
                         float percent = (bean.transferSize) / (float) bean.size;
-                        String showText = df.format(percent) + " " + Utils.long2time(mContext, bean.elapsed);
+                        String showText = df.format(percent) + " " + Utils.long2elapsed(mContext, bean.elapsed);
                         mTransferBar.setProgressNum(percent, 0, showText, bean);
 
                         String transferSize = FileSizeUtil.FormetFileSize(bean.transferSize) + "/" + FileSizeUtil.FormetFileSize(bean.size);
-                        mTransferText.setText(transferSize);
+                        //mTransferText.setText(transferSize);
+                        Messenger.sendMessage(Messenger.LEVEL3, transferSize);
                     }
                     break;
                 case DefaultValue.MESSAGE_SET_CUSTOM_DEVICE:
@@ -571,6 +641,10 @@ public class TransferActivity extends AppCompatActivity implements
 
     @Override
     public void connect(WifiP2pDevice device) {
+        mStatus = DefaultValue.STATUS_CONNECTED;
+        Messenger.setStatus(mStatus);
+        Messenger.sendMessage(Messenger.LEVEL3, R.string.status_p2p_connect/*, matchedDevice.deviceName*/);
+
         if (device.status == WifiP2pDevice.CONNECTED) {
             //showDialog(DIALOG_DISCONNECT);
             LogUtils.e(TAG, "p2p connected");
@@ -583,9 +657,9 @@ public class TransferActivity extends AppCompatActivity implements
             config.deviceAddress = device.deviceAddress;
             config.wps.setup = WpsInfo.PBC;
 
-            WifiP2pQueueManager queueManager = new WifiP2pQueueManager(mManager, mChannel, null);
-            queueManager.setConfig(config);
-            queueManager
+            mQueueManager.reset();
+            mQueueManager.setConfig(config);
+            mQueueManager
                     //.sendMessage(new WifiP2pMessage(WifiP2pMessage.MESSAGE_CREATE_GROUP, null))
                     .sendMessage(new WifiP2pMessage(WifiP2pMessage.MESSAGE_CONNECT, null))
                     .start();
@@ -594,12 +668,17 @@ public class TransferActivity extends AppCompatActivity implements
 
     @Override
     public void requestConnect(NetworkInfo networkInfo) {
-        mLooper = false;
-        mQRCode.setVisibility(View.INVISIBLE);
-        mDeviceBar.setVisibility(View.VISIBLE);
-        mTransferBar.setVisibility(View.VISIBLE);
-
         if (networkInfo.isConnected()) {
+            mLooper = false;
+            mQRCode.setVisibility(View.INVISIBLE);
+            mDeviceBar.setVisibility(View.VISIBLE);
+            mTransferBar.setVisibility(View.VISIBLE);
+            mShare.setEnabled(false);
+            mAccept.setText(mMyDevice.isServer() ? R.string.cancel_send : R.string.cancel_recv);
+            //mStatus = DefaultValue.STATUS_CONNECTED;
+            //Messenger.setStatus(mStatus);
+            keepScreenOn(mContext, false);
+
             mManager.requestConnectionInfo(mChannel, new WifiP2pManager.ConnectionInfoListener() {
 
                 @Override
@@ -639,6 +718,26 @@ public class TransferActivity extends AppCompatActivity implements
                     task.start();
                 }
             });
+        }
+    }
+
+    private PowerManager.WakeLock mWakeLock = null;
+
+    private void keepScreenOn(Context context, boolean on) {
+        if (on) {
+            if (mWakeLock == null) {
+                PowerManager pm = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
+                mWakeLock = pm.newWakeLock(PowerManager.SCREEN_BRIGHT_WAKE_LOCK | PowerManager.ON_AFTER_RELEASE,
+                        "TctTransfer_ScreenLock");
+                mWakeLock.acquire();
+                LogUtils.i(TAG, "TctTransfer_ScreenLock on");
+            }
+        } else {
+            if ((mWakeLock != null) && mWakeLock.isHeld()) {
+                mWakeLock.release();
+                mWakeLock = null;
+                LogUtils.i(TAG, "TctTransfer_ScreenLock off");
+            }
         }
     }
 

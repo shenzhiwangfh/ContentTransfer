@@ -16,7 +16,7 @@ public class FileBean implements Serializable {
     public int action; //0:upload, 1:download
     public long time;
     public long elapsed;
-    public int type; //0:picture, 1:video, 2:text, 3:radio, 4:other
+    public int type; //0:image, 1:video, 2:text, 3:audio, 4:other
     public int status; //0:start, 1:ing, 2:end
     public int result; //0:succeed, 1:failed,
 

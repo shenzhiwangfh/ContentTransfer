@@ -67,6 +67,7 @@ public class FileTransferGroupOwner extends Thread {
             LogUtils.e(TAG, "FileTransferGroupOwner,transfer error=" + e);
             //if (listener != null)
             //    listener.sendStatus(DefaultValue.TRANSFER_ERROR, bean);
+            bean.result = 1;
         }
     }
 }

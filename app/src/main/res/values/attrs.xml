@@ -4,6 +4,7 @@
     <declare-styleable name="CircleBarView">
         <attr name="progress_up_color" format="color"></attr>
         <attr name="progress_down_color" format="color"></attr>
+        <attr name="progress_error_color" format="color"></attr>
         <attr name="bg_color" format="color"></attr>
 
         <attr name="bar_width" format="dimension"></attr>

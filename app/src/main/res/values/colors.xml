@@ -4,8 +4,8 @@
     <color name="colorPrimaryDark">#303F9F</color>
     <color name="colorAccent">#FF4081</color>
 
-    <color name="button_normal">#FF00A000</color>
-    <color name="button_pressed">#FF008000</color>
+    <color name="button_normal">#3F51B5</color>
+    <color name="button_pressed">#303F9F</color>
     <color name="button_disable">#B0AAAAAA</color>
     <color name="button_red">#FF4081</color>
 </resources>

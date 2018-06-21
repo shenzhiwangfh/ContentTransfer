@@ -7,11 +7,13 @@ import com.tct.transfer.log.LogUtils;
 public class WifiP2pQueueManager implements WifiP2pManager.ActionListener {
     private final static String TAG = "WifiP2pQueueManager";
 
-    private WifiP2pManager manager;
-    private WifiP2pManager.Channel channel;
+    private static WifiP2pQueueManager instance;
+
+    private static WifiP2pManager p2pManager;
+    private static WifiP2pManager.Channel p2pManagerChannel;
     private WifiP2pConfig config;
 
-    private WifiP2pMessageQueue queue;
+    private static WifiP2pMessageQueue queue;
     private OnFinishListener listener;
 
     @Override
@@ -38,14 +40,31 @@ public class WifiP2pQueueManager implements WifiP2pManager.ActionListener {
         void onFinish();
     }
 
-    public WifiP2pQueueManager(WifiP2pManager manager, WifiP2pManager.Channel channel, OnFinishListener listener) {
-        this.manager = manager;
-        this.channel = channel;
+    public WifiP2pQueueManager setOnFinishListener(OnFinishListener listener) {
         this.listener = listener;
+        return instance;
+    }
+
+    private WifiP2pQueueManager(WifiP2pManager manager, WifiP2pManager.Channel channel) {
+        p2pManager = manager;
+        p2pManagerChannel = channel;
+        //this.listener = listener;
 
         if (queue == null) {
             queue = new WifiP2pMessageQueue();
         }
+    }
+
+    public static WifiP2pQueueManager init(WifiP2pManager manager, WifiP2pManager.Channel channel) {
+        if(instance == null) {
+            instance = new WifiP2pQueueManager(manager, channel);
+        }
+        return instance;
+    }
+
+    public void reset() {
+        this.listener = null;
+        queue.cleanMessage();
     }
 
     public void setConfig(WifiP2pConfig config) {
@@ -54,7 +73,7 @@ public class WifiP2pQueueManager implements WifiP2pManager.ActionListener {
 
     public WifiP2pQueueManager sendMessage(WifiP2pMessage msg) {
         queue.addMessage(msg);
-        return this;
+        return instance;
     }
 
     public void start() {
@@ -74,19 +93,19 @@ public class WifiP2pQueueManager implements WifiP2pManager.ActionListener {
     private void doAction(WifiP2pMessage msg) {
         switch (msg.action.getIndex()) {
             case WifiP2pMessage.MESSAGE_CANCEL_CONNECT:
-                manager.cancelConnect(channel, this);
+                p2pManager.cancelConnect(p2pManagerChannel, this);
                 break;
             case WifiP2pMessage.MESSAGE_REMOVE_GROUP:
-                manager.removeGroup(channel, this);
+                p2pManager.removeGroup(p2pManagerChannel, this);
                 break;
             case WifiP2pMessage.MESSAGE_DISCOVER_PEERS:
-                manager.discoverPeers(channel, this);
+                p2pManager.discoverPeers(p2pManagerChannel, this);
                 break;
             case WifiP2pMessage.MESSAGE_CONNECT:
-                manager.connect(channel, config, this);
+                p2pManager.connect(p2pManagerChannel, config, this);
                 break;
             case WifiP2pMessage.MESSAGE_CREATE_GROUP:
-                manager.createGroup(channel, this);
+                p2pManager.createGroup(p2pManagerChannel, this);
                 break;
             case WifiP2pMessage.MESSAGE_UNKNOWN:
             default:

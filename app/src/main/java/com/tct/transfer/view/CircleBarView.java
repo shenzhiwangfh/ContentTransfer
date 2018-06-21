@@ -45,6 +45,7 @@ public class CircleBarView extends View {
 
     private int progressUpColor;//进度条圆弧颜色
     private int progressDownColor;//进度条圆弧颜色
+    private int progressErrColor;
     private int bgColor;//背景圆弧颜色
     private float startAngle;//背景圆弧的起始角度
     private float sweepAngle;//背景圆弧扫过的角度
@@ -70,6 +71,7 @@ public class CircleBarView extends View {
 
         progressUpColor = typedArray.getColor(R.styleable.CircleBarView_progress_up_color, Color.YELLOW);
         progressDownColor = typedArray.getColor(R.styleable.CircleBarView_progress_down_color, Color.GREEN);
+        progressErrColor = typedArray.getColor(R.styleable.CircleBarView_progress_error_color, Color.RED);
         bgColor = typedArray.getColor(R.styleable.CircleBarView_bg_color, Color.GRAY);
         startAngle = typedArray.getFloat(R.styleable.CircleBarView_start_angle, 0);
         sweepAngle = typedArray.getFloat(R.styleable.CircleBarView_sweep_angle, 360);
@@ -135,10 +137,10 @@ public class CircleBarView extends View {
         canvas.drawArc(mRectF, startAngle, sweepAngle, false, bgPaint);
         if(bean != null) {
             if (bean.action == 0) { //upload
-                progressPaint.setColor(progressUpColor);
+                progressPaint.setColor(bean.result == 0 ? progressUpColor : progressErrColor);
                 canvas.drawArc(mRectF, startAngle, progressSweepAngle, false, progressPaint);
             } else if (bean.action == 1) { //download
-                progressPaint.setColor(progressDownColor);
+                progressPaint.setColor(bean.result == 0 ? progressDownColor : progressErrColor);
                 canvas.drawArc(mRectF, startAngle + sweepAngle - progressSweepAngle, progressSweepAngle, false, progressPaint);
             }
         }
@@ -199,7 +201,7 @@ public class CircleBarView extends View {
      * @param progressNum 进度条数值
      * @param time        动画持续时间
      */
-    public void setProgressNum(float progressNum, int time,  String text, FileBean bean) {
+    public void setProgressNum(float progressNum, int time, String text, FileBean bean) {
         this.progressNum = progressNum;
         this.text = text;
         this.bean = bean;
@@ -208,6 +210,15 @@ public class CircleBarView extends View {
         invalidate();
         //anim.setDuration(time);
         //this.startAnimation(anim);
+    }
+
+    public void reset() {
+        this.progressNum = 0;
+        this.text = null;
+        this.bean = null;
+        progressSweepAngle = sweepAngle * progressNum * 100 / maxNum;
+
+        invalidate();
     }
 
     /**
