@@ -7,8 +7,10 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.net.NetworkInfo;
+import android.net.Uri;
 import android.net.wifi.WpsInfo;
 import android.net.wifi.p2p.WifiP2pConfig;
 import android.net.wifi.p2p.WifiP2pDevice;
@@ -18,6 +20,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.os.PowerManager;
+import android.provider.MediaStore;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
@@ -556,17 +559,6 @@ public class TransferActivity extends AppCompatActivity implements
                         Messenger.setStatus(mStatus);
                         Messenger.sendMessage(Messenger.LEVEL3, bean.result == 0 ? R.string.transfer_end : R.string.transfer_error);
 
-                        //0:picture, 1:video, 2:text, 3:audio, 4:other
-                        if (MediaFileUtil.isImageFileType(bean.path)) {
-                            bean.type = DefaultValue.TYPE_IMAGE;
-                        } else if (MediaFileUtil.isVideoFileType(bean.path)) {
-                            bean.type = DefaultValue.TYPE_VIDEO;
-                        } else if (MediaFileUtil.isAudioFileType(bean.path)) {
-                            bean.type = DefaultValue.TYPE_AUDIO;
-                        } else {
-                            bean.type = DefaultValue.TYPE_OTHER;
-                        }
-
                         insertBean(bean);
                     } else {
                         float percent = (bean.transferSize) / (float) bean.size;
@@ -750,21 +742,32 @@ public class TransferActivity extends AppCompatActivity implements
         Intent intent = null;
 
         switch (bean.type) {
-            case DefaultValue.TYPE_IMAGE:
-                intent = IntentUtil.getImageFileIntent(mContext, bean.path);
-                break;
-            case DefaultValue.TYPE_VIDEO:
-                intent = IntentUtil.getVideoFileIntent(mContext, bean.path);
-                break;
+            case DefaultValue.TYPE_IMAGE: {
+                //Uri uri = (bean.uri == null || bean.uri.isEmpty()) ? null : Uri.parse(bean.uri);
+                intent = IntentUtil.getImageFileIntent(bean);
+            }
+            break;
+            case DefaultValue.TYPE_VIDEO: {
+                //Uri uri = (bean.uri == null || bean.uri.isEmpty()) ? null : Uri.parse(bean.uri);
+                intent = IntentUtil.getVideoFileIntent(bean);
+            }
+            break;
             case DefaultValue.TYPE_TEXT:
                 break;
-            case DefaultValue.TYPE_AUDIO:
-                break;
+            case DefaultValue.TYPE_AUDIO: {
+                //Uri uri = (bean.uri == null || bean.uri.isEmpty()) ? null : Uri.parse(bean.uri);
+                intent = IntentUtil.getAudioFileIntent(bean);
+            }
+            break;
             default:
                 break;
         }
 
-        //if(intent != null) startActivity(intent);
+        if (intent == null) {
+            Toast.makeText(mContext, R.string.type_not_support, Toast.LENGTH_SHORT).show();
+        } else {
+            startActivity(intent);
+        }
     }
 
     @Override
@@ -773,6 +776,24 @@ public class TransferActivity extends AppCompatActivity implements
     }
 
     private void insertBean(FileBean bean) {
+        //0:picture, 1:video, 2:text, 3:audio, 4:other
+        if (MediaFileUtil.isImageFileType(bean.path)) {
+            bean.type = DefaultValue.TYPE_IMAGE;
+        } else if (MediaFileUtil.isVideoFileType(bean.path)) {
+            bean.type = DefaultValue.TYPE_VIDEO;
+        } else if (MediaFileUtil.isAudioFileType(bean.path)) {
+            bean.type = DefaultValue.TYPE_AUDIO;
+        } else {
+            bean.type = DefaultValue.TYPE_OTHER;
+        }
+
+        if (bean.type == DefaultValue.TYPE_IMAGE ||
+                bean.type == DefaultValue.TYPE_VIDEO ||
+                bean.type == DefaultValue.TYPE_AUDIO) {
+            Uri uri = MediaFileUtil.getMediaUriFromPath(mContext, bean);
+            if(uri != null) bean.uri = uri.toString();
+        }
+
         ContentValues value = new ContentValues();
         value.put(FileBeanHelper.PATH, bean.path);
         value.put(FileBeanHelper.NAME, bean.name);
@@ -785,6 +806,7 @@ public class TransferActivity extends AppCompatActivity implements
         value.put(FileBeanHelper.TYPE, bean.type);
         value.put(FileBeanHelper.STATUS, bean.status);
         value.put(FileBeanHelper.RESULT, bean.result);
+        if (bean.uri != null) value.put(FileBeanHelper.URI, bean.uri);
         mResolver.insert(DefaultValue.uri, value);
         mAdapter.changeBeans();
     }

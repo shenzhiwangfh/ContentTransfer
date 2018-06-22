@@ -1,5 +1,16 @@
 package com.tct.transfer.util;
 
+import android.content.ContentResolver;
+import android.content.ContentUris;
+import android.content.ContentValues;
+import android.content.Context;
+import android.database.Cursor;
+import android.net.Uri;
+import android.provider.MediaStore;
+
+import com.tct.transfer.file.FileBean;
+import com.tct.transfer.log.LogUtils;
+
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.util.HashMap;
@@ -187,6 +198,7 @@ public class MediaFileUtil {
 
     /**
      * 判断文件的编码格式
+     *
      * @param fileName :file
      * @return 文件编码格式
      * @throws Exception
@@ -209,5 +221,45 @@ public class MediaFileUtil {
                 code = "GBK";
         }
         return code;
+    }
+
+    public static Uri getMediaUriFromPath(Context context, FileBean bean) {
+        ContentResolver resolver = context.getContentResolver();
+        Uri mediaUri = null;
+        String selection = null;
+        String id = null;
+
+        if (bean.type == DefaultValue.TYPE_IMAGE) {
+            mediaUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
+            selection = MediaStore.Images.ImageColumns.DATA + "=?";
+            id = MediaStore.Images.Media._ID;
+        } else if (bean.type == DefaultValue.TYPE_VIDEO) {
+            mediaUri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI;
+            selection = MediaStore.Video.VideoColumns.DATA + "=?";
+            id = MediaStore.Video.Media._ID;
+        } else if (bean.type == DefaultValue.TYPE_AUDIO) {
+            mediaUri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
+            selection = MediaStore.Audio.AudioColumns.DATA + "=?";
+            id = MediaStore.Audio.Media._ID;
+        } else {
+            return null;
+        }
+
+        Cursor cursor = resolver.query(mediaUri, null, selection, new String[]{bean.path}, null, null);
+        if (cursor != null && cursor.moveToFirst()) {
+            Uri uri = ContentUris.withAppendedId(mediaUri, cursor.getLong(cursor.getColumnIndex(id)));
+            cursor.close();
+            return uri;
+        } else {
+            MediaFileType type = getFileType(bean.path);
+            ContentValues values = new ContentValues();
+            values.put(MediaStore.Images.ImageColumns.DATA, bean.path);
+            values.put(MediaStore.Images.ImageColumns.TITLE, bean.name);
+            values.put(MediaStore.Images.ImageColumns.DISPLAY_NAME, bean.name);
+            values.put(MediaStore.Images.ImageColumns.MIME_TYPE, type.mimeType);
+            Uri uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
+            //bean.uri = uri.toString();
+            return uri;
+        }
     }
 }

@@ -102,6 +102,7 @@ public class BeanAdapter extends RecyclerView.Adapter<BeanAdapter.ViewHolder> im
                 bean.type = cursor.getInt(cursor.getColumnIndex(FileBeanHelper.TYPE));
                 bean.status = cursor.getInt(cursor.getColumnIndex(FileBeanHelper.STATUS));
                 bean.result = cursor.getInt(cursor.getColumnIndex(FileBeanHelper.RESULT));
+                bean.uri = cursor.getString(cursor.getColumnIndex(FileBeanHelper.URI));
                 mBeans.add(bean);
                 cursor.moveToNext();
             }

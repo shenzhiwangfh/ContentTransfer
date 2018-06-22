@@ -39,4 +39,6 @@
     <string name="hour">小时</string>
     <string name="minute">分钟</string>
     <string name="second">秒</string>
+
+    <string name="type_not_support">暂时不支持打开该类型文件</string>
 </resources>

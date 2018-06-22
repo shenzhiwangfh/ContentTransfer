@@ -19,6 +19,7 @@ public class FileBean implements Serializable {
     public int type; //0:image, 1:video, 2:text, 3:audio, 4:other
     public int status; //0:start, 1:ing, 2:end
     public int result; //0:succeed, 1:failed,
+    public String uri;
 
     public FileBean() {
 
@@ -36,6 +37,7 @@ public class FileBean implements Serializable {
         this.type = bean.type; //0:picture, 1:video, 2:text, 3:other
         this.status = bean.status; //0:start, 1:ing, 2:end
         this.result = bean.result; //0:succeed, 1:failed,
+        //this.uri = bean.uri;
     }
 
     public String toString() {
@@ -45,6 +47,7 @@ public class FileBean implements Serializable {
                 .append("size").append("=").append(size).append(",")
                 .append(action == 0 ? "upload" : "download").append(",")
                 .append("type").append("=").append(type);
+                //.append("uri").append("=").append(uri);
         return sb.toString();
     }
 }

@@ -22,6 +22,7 @@ public class FileBeanHelper extends SQLiteOpenHelper {
     public final static String TYPE = "type"; //0:picture, 1:video, 2:text, 3:radio, 4:other
     public final static String STATUS = "status"; //0:start, 1:ing, 2:end
     public final static String RESULT = "result"; //0:succeed, 1:failed,
+    public final static String URI = "uri"; //0:succeed, 1:failed,
 
     public final static String DB_NAME = "p2p.db";
     public final static String TABLE_NAME = "p2p";
@@ -38,7 +39,8 @@ public class FileBeanHelper extends SQLiteOpenHelper {
             ELAPSED + " LONG," +
             TYPE + " INTEGER," +
             STATUS + " INTEGER," +
-            RESULT + " INTEGER)";
+            RESULT + " INTEGER," +
+            URI + ")";
     private final static String DROP_TABLE = "DROP TABLE IF EXISTS " + TABLE_NAME;
 
     public FileBeanHelper(Context context, String name, SQLiteDatabase.CursorFactory factory, int version) {

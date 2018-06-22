@@ -37,6 +37,16 @@ public class FileTransfer {
             bean = (FileBean) Utils.byteArrayToObject(beanBytes);
             bean.action = 1;
 
+            /*
+            String name = bean.path.substring(bean.path.lastIndexOf("/") + 1);
+            String now = String.valueOf(System.currentTimeMillis());
+            int index_point = name.lastIndexOf(".");
+            if(index_point == -1) {
+                bean.name = name + "_" + now;
+            } else {
+                bean.name = name.substring(0, index_point - 1) + "_" + now + name.substring(index_point);
+            }
+            */
             bean.name = bean.path.substring(bean.path.lastIndexOf("/") + 1);
             bean.path = DefaultValue.recvPath() + "/" + bean.name;
             LogUtils.e(TAG, "client,bean=" + bean.toString());
