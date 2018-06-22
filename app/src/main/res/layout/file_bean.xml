@@ -4,7 +4,7 @@
     android:layout_height="60dp"
     android:paddingEnd="10dp"
     android:paddingStart="10dp"
-    android:backgroundTint="@color/item_background">
+    android:background="@drawable/item_background">
 
     <ImageView
         android:id="@+id/bean_type"

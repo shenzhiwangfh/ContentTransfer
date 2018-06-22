@@ -49,6 +49,7 @@ import com.tct.transfer.permission.PermissionInterface;
 import com.tct.transfer.permission.PermissionUtil;
 import com.tct.transfer.queue.WifiP2pMessage;
 import com.tct.transfer.queue.WifiP2pQueueManager;
+import com.tct.transfer.util.IntentUtil;
 import com.tct.transfer.util.MediaFileUtil;
 import com.tct.transfer.util.Utils;
 import com.tct.transfer.view.CircleBarView;
@@ -126,6 +127,7 @@ public class TransferActivity extends AppCompatActivity implements
     };
 
     private TransferThread mThread;
+
     private class TransferThread extends Thread {
 
         private ArrayList<FileBean> beans = new ArrayList<>();
@@ -320,7 +322,7 @@ public class TransferActivity extends AppCompatActivity implements
             case R.id.accept_file: {
                 //setServer(false);
 
-                if(mStatus >= DefaultValue.STATUS_PEER && mStatus <= DefaultValue.STATUS_CONNECTED) {
+                if (mStatus >= DefaultValue.STATUS_PEER && mStatus <= DefaultValue.STATUS_CONNECTED) {
                     mTransferBar.reset();
                     mQRCode.setVisibility(View.INVISIBLE);
                     mDeviceBar.setVisibility(View.VISIBLE);
@@ -488,7 +490,8 @@ public class TransferActivity extends AppCompatActivity implements
                     mShare.setEnabled(isWifiOpened());
                     mAccept.setEnabled(isWifiOpened());
                     mWifiStatus.setEnabled(!isWifiOpened());
-                    if(!isWifiOpened()) Messenger.sendMessage(Messenger.LEVEL0, R.string.status_wifi_not_opened);
+                    if (!isWifiOpened())
+                        Messenger.sendMessage(Messenger.LEVEL0, R.string.status_wifi_not_opened);
                     break;
                 case DefaultValue.MESSAGE_WIFI_DISCOVER:
                     LogUtils.e(TAG, "handler,MESSAGE_WIFI_DISCOVER");
@@ -554,11 +557,11 @@ public class TransferActivity extends AppCompatActivity implements
                         Messenger.sendMessage(Messenger.LEVEL3, bean.result == 0 ? R.string.transfer_end : R.string.transfer_error);
 
                         //0:picture, 1:video, 2:text, 3:audio, 4:other
-                        if(MediaFileUtil.isImageFileType(bean.path)) {
+                        if (MediaFileUtil.isImageFileType(bean.path)) {
                             bean.type = DefaultValue.TYPE_IMAGE;
-                        } else if(MediaFileUtil.isVideoFileType(bean.path)) {
+                        } else if (MediaFileUtil.isVideoFileType(bean.path)) {
                             bean.type = DefaultValue.TYPE_VIDEO;
-                        } else if(MediaFileUtil.isAudioFileType(bean.path)) {
+                        } else if (MediaFileUtil.isAudioFileType(bean.path)) {
                             bean.type = DefaultValue.TYPE_AUDIO;
                         } else {
                             bean.type = DefaultValue.TYPE_OTHER;
@@ -744,6 +747,24 @@ public class TransferActivity extends AppCompatActivity implements
     @Override
     public void onItemClick(FileBean bean) {
         LogUtils.e(TAG, "onItemClick=" + bean.toString());
+        Intent intent = null;
+
+        switch (bean.type) {
+            case DefaultValue.TYPE_IMAGE:
+                intent = IntentUtil.getImageFileIntent(mContext, bean.path);
+                break;
+            case DefaultValue.TYPE_VIDEO:
+                intent = IntentUtil.getVideoFileIntent(mContext, bean.path);
+                break;
+            case DefaultValue.TYPE_TEXT:
+                break;
+            case DefaultValue.TYPE_AUDIO:
+                break;
+            default:
+                break;
+        }
+
+        //if(intent != null) startActivity(intent);
     }
 
     @Override
