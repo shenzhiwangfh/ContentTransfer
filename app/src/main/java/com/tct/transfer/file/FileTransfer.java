@@ -37,17 +37,36 @@ public class FileTransfer {
             bean = (FileBean) Utils.byteArrayToObject(beanBytes);
             bean.action = 1;
 
-            /*
+            ////////////
+            //name_TctTransxxxxxxx.xxx
             String name = bean.path.substring(bean.path.lastIndexOf("/") + 1);
-            String now = String.valueOf(System.currentTimeMillis());
-            int index_point = name.lastIndexOf(".");
-            if(index_point == -1) {
-                bean.name = name + "_" + now;
-            } else {
-                bean.name = name.substring(0, index_point - 1) + "_" + now + name.substring(index_point);
+            int pointIndex = name.lastIndexOf(".");
+            String postfix = null;
+            if(pointIndex > 0) {
+                postfix = name.substring(pointIndex);
             }
-            */
-            bean.name = bean.path.substring(bean.path.lastIndexOf("/") + 1);
+            int tctIndex = name.lastIndexOf("_TctTrans");
+            String tct = null;
+            if(tctIndex > 0) {
+                if(pointIndex > 0) {
+                    tct = name.substring(tctIndex, pointIndex);
+                } else {
+                    tct = name.substring(tctIndex);
+                }
+            }
+
+            String now = String.valueOf(String.valueOf(System.currentTimeMillis()));
+            String tctNew = "_TctTrans" + now.substring(now.length() - 4);
+            if(tct != null) {
+                bean.name = name.replace(tct, tctNew);
+            } else {
+                if(postfix != null) {
+                    bean.name = name.substring(0, pointIndex) + tctNew + name.substring(pointIndex);
+                } else {
+                    bean.name = name + tctNew;
+                }
+            }
+            //bean.name = bean.path.substring(bean.path.lastIndexOf("/") + 1);
             bean.path = DefaultValue.recvPath() + "/" + bean.name;
             LogUtils.e(TAG, "client,bean=" + bean.toString());
 

@@ -2,9 +2,11 @@ package com.tct.transfer;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.database.Cursor;
@@ -27,9 +29,11 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -61,6 +65,7 @@ import com.tct.transfer.wifi.WifiP2pDeviceInfo;
 import com.tct.transfer.wifi.WifiP2pInterface;
 import com.tct.transfer.log.Messenger;
 
+import java.io.File;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 
@@ -738,7 +743,17 @@ public class TransferActivity extends AppCompatActivity implements
 
     @Override
     public void onItemClick(FileBean bean) {
-        LogUtils.e(TAG, "onItemClick=" + bean.toString());
+        //LogUtils.e(TAG, "onItemClick=" + bean.toString());
+        openBean(bean);
+    }
+
+    @Override
+    public void onItemLongClick(FileBean bean) {
+        //LogUtils.e(TAG, "onItemLongClick=" + bean.toString());
+        deleteBean(bean);
+    }
+
+    private void openBean(FileBean bean) {
         Intent intent = null;
 
         switch (bean.type) {
@@ -770,11 +785,6 @@ public class TransferActivity extends AppCompatActivity implements
         }
     }
 
-    @Override
-    public void onItemLongClick(FileBean bean) {
-        LogUtils.e(TAG, "onItemLongClick=" + bean.toString());
-    }
-
     private void insertBean(FileBean bean) {
         //0:picture, 1:video, 2:text, 3:audio, 4:other
         if (MediaFileUtil.isImageFileType(bean.path)) {
@@ -790,7 +800,7 @@ public class TransferActivity extends AppCompatActivity implements
         if (bean.type == DefaultValue.TYPE_IMAGE ||
                 bean.type == DefaultValue.TYPE_VIDEO ||
                 bean.type == DefaultValue.TYPE_AUDIO) {
-            Uri uri = MediaFileUtil.getMediaUriFromPath(mContext, bean);
+            Uri uri = MediaFileUtil.getMediaUri(mContext, bean);
             if(uri != null) bean.uri = uri.toString();
         }
 
@@ -811,7 +821,30 @@ public class TransferActivity extends AppCompatActivity implements
         mAdapter.changeBeans();
     }
 
-    private void deleteBean() {
+    private void deleteBean(final FileBean bean) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(mContext);
+        View view = LayoutInflater.from(mContext).inflate(R.layout.delete_item, null);
+        builder.setView(view);
+        final CheckBox deleteFile = view.findViewById(R.id.delete_file);
+        builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                //Toast.makeText(mContext, "用户名: " + deleteFile.isChecked(), Toast.LENGTH_SHORT).show();
+                mResolver.delete(DefaultValue.uri, FileBeanHelper._ID + "=?", new String[] {String.valueOf(bean._id)});
 
+                if(deleteFile.isChecked()) {
+                    File file = new File(bean.path);
+                    if (file.exists()) file.delete();
+                }
+                mAdapter.changeBeans();
+            }
+        });
+        builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                //
+            }
+        });
+        builder.show();
     }
 }

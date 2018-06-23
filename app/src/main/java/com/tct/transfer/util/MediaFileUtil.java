@@ -223,7 +223,7 @@ public class MediaFileUtil {
         return code;
     }
 
-    public static Uri getMediaUriFromPath(Context context, FileBean bean) {
+    public static Uri getMediaUri(Context context, FileBean bean) {
         ContentResolver resolver = context.getContentResolver();
         Uri mediaUri = null;
         String selection = null;
@@ -245,12 +245,7 @@ public class MediaFileUtil {
             return null;
         }
 
-        Cursor cursor = resolver.query(mediaUri, null, selection, new String[]{bean.path}, null, null);
-        if (cursor != null && cursor.moveToFirst()) {
-            Uri uri = ContentUris.withAppendedId(mediaUri, cursor.getLong(cursor.getColumnIndex(id)));
-            cursor.close();
-            return uri;
-        } else {
+        if(bean.action == 1) { //download, new uri
             MediaFileType type = getFileType(bean.path);
             ContentValues values = new ContentValues();
             values.put(MediaStore.Images.ImageColumns.DATA, bean.path);
@@ -260,6 +255,15 @@ public class MediaFileUtil {
             Uri uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
             //bean.uri = uri.toString();
             return uri;
+        } else {
+            Cursor cursor = resolver.query(mediaUri, null, selection, new String[]{bean.path}, null, null);
+            if (cursor != null && cursor.moveToFirst()) {
+                Uri uri = ContentUris.withAppendedId(mediaUri, cursor.getLong(cursor.getColumnIndex(id)));
+                cursor.close();
+                return uri;
+            } else {
+                return null;
+            }
         }
     }
 }

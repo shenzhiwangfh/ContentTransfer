@@ -70,6 +70,7 @@ public class IntentUtil {
         intent.putExtra("oneshot", 0);
         intent.putExtra("configchange", 0);
         Uri uri = Uri.parse(bean.uri);//Uri.fromFile(new File(param));
+        intent.putExtra(MediaStore.EXTRA_OUTPUT, uri);
         intent.setDataAndType(uri, "audio/*");
         return intent;
     }

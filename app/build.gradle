@@ -8,8 +8,8 @@ android {
         applicationId "com.tct.transfer"
         minSdkVersion 21
         targetSdkVersion 26
-        versionCode 18061004
-        versionName "1.1.00"
+        versionCode 18062301
+        versionName "1.2.00"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
     buildTypes {

@@ -47,7 +47,7 @@ public class FileBeanProvider extends ContentProvider {
     @Nullable
     @Override
     public Uri insert(@NonNull Uri uri, @Nullable ContentValues values) {
-        SQLiteDatabase db = mHelper.getReadableDatabase();
+        SQLiteDatabase db = mHelper.getWritableDatabase();
         switch (uriMatcher.match(uri)) {
             case BEANS:
                 long id = db.insert(FileBeanHelper.TABLE_NAME, null, values);
@@ -61,6 +61,14 @@ public class FileBeanProvider extends ContentProvider {
 
     @Override
     public int delete(@NonNull Uri uri, @Nullable String selection, @Nullable String[] selectionArgs) {
+        SQLiteDatabase db = mHelper.getWritableDatabase();
+        switch (uriMatcher.match(uri)) {
+            case BEANS:
+                db.delete(FileBeanHelper.TABLE_NAME, selection, selectionArgs);
+                break;
+            default:
+                break;
+        }
         return 0;
     }
 
